@@ -13,17 +13,16 @@ function get(url) {
 
 function persistentCallback(url, resolve, reject, err, resp, body) {
     if (err) {
-        console.log('Issue with:', url);
-        console.log(err);
         reject(err);
     }
     else if (resp.statusCode === 429) {
+        console.log('Got rate limited');
         setTimeout(function() {
             request.get(url, persistentCallback.bind(null, url, resolve, reject));
         }, parseInt(resp.headers['retry-after']));
     }
     else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
-        console.log('Got', resp.statusCode, 'code, retrying in 0.5 sec');
+        console.log('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');
         setTimeout(function() {
             request.get(url, persistentCallback.bind(null, url, resolve, reject));
         }, 500);
@@ -39,7 +38,6 @@ function persistentCallback(url, resolve, reject, err, resp, body) {
     }
 }
 function persistentGet(url, identifier) {
-    console.log(url);
     return new Promise(function get(resolve, reject) {
             request.get(url, persistentCallback.bind(null, url, resolve, reject));
         })
@@ -52,8 +50,11 @@ function persistentGet(url, identifier) {
                         : null;
         })
         .catch(function(err) {
-            if (err.code === 'ECONNRESET')
+            if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+                console.log('Issue with:', url);
+                console.log(err);
                 return persistentGet(url, identifier);
+            }
             else
                 throw err;
         });

@@ -3,11 +3,16 @@ var promises    = require('../helpers/promised.js'),
 
 // --------------------------------------- Global Variables -------------------------------------
 
+var NOW = (new Date).getTime();
+var WEEK_AGO = NOW - 604800000 / 7; // One week in milliseconds
+
+// console.log('Time threshold of a week ago:', WEEK_AGO);
+
 var API_KEY = process.env.RIOT_KEY;
-var RATE_LIMIT = 200;
+var RATE_LIMIT = 100;
 var INITIAL_SEEDS = [
     51405,          // C9 Sneaky
-    492066,         // C9 Hai
+    // 492066,         // C9 Hai
     47585509        // CyclicSpec
 ];
 
@@ -17,7 +22,8 @@ var leagueEndpoint = 'https://na.api.pvp.net/api/lol/na/v2.5/league/by-summoner/
 
 var matchListOptions = {
     'rankedQueues': 'RANKED_SOLO_5x5',
-    // 'seasons': 'SEASON2015',
+    'seasons': 'SEASON2015',
+    'beginTime': WEEK_AGO,
     'api_key': API_KEY
 };
 var matchOptions = {
@@ -39,9 +45,14 @@ function highEnoughTier(leagueDto) {
     return tierChecker.has(leagueDto.tier);
 }
 
+function logErrorAndRethrow(err) {
+    console.log(err.stack);
+    throw err;
+}
+
 // --------------------------------------- Main Functions ---------------------------------------
 
-function getMatches(players) {
+function getMatchesFromPlayers(players) {
     console.log('Getting matches for', players.length, 'players');
     // console.log(players);
     var matches = new Set();
@@ -51,19 +62,22 @@ function getMatches(players) {
                 return promises.persistentGet(matchListEndpoint + summonerId + matchListQuery);
             },
             function handleMatchList(matchList) {
-                matchList.matches.slice(0,10).forEach(function(matchListEntry) {
-                    matches.add(parseInt(matchListEntry.matchId));
-                });
+                if (matchList.totalGames != 0) {
+                    matchList.matches.forEach(function(matchListEntry) {
+                        matches.add(parseInt(matchListEntry.matchId));
+                    });
+                }
             }
         )
         .then(function() {
             var arrayMatches = [];
             matches.forEach(function(matchId) { arrayMatches.push(matchId); });
             return arrayMatches;
-        });
+        })
+        .catch(logErrorAndRethrow);
 }
 
-function getPlayers(matches) {
+function getPlayersFromMatches(matches) {
     console.log('Getting players for', matches.length, 'matches');
     var players = new Set();
 
@@ -86,7 +100,7 @@ function getPlayers(matches) {
         });
 }
 
-function getLeaguesAndExpandPlayers(players) {
+function getLeaguesFromPlayersAndExpand(players) {
     console.log('Getting leagues for', players.length, 'players');
     var expandedPlayers = new Set(players); // start the larger set off with the existing people
 
@@ -105,16 +119,15 @@ function getLeaguesAndExpandPlayers(players) {
                     var leagueDtoList = playerLeagueMap[summonerId];
 
                     leagueDtoList.forEach(function(leagueDto) {
-
                         if (leagueDto.queue === 'RANKED_SOLO_5x5') {
                             if (highEnoughTier(leagueDto)) {
-                                console.log(leagueDto.entries.length, 'new players');
+                                // console.log(leagueDto.entries.length, 'new players');
                                 leagueDto.entries.forEach(function(leagueDtoEntry) {
                                     expandedPlayers.add(parseInt(leagueDtoEntry.playerOrTeamId));
                                 });
                             }
                             else {
-                                console.log('Removing', summonerId);
+                                // console.log('Removing', summonerId);
                                 expandedPlayers.delete(parseInt(summonerId));
                             }
                         }
@@ -125,20 +138,20 @@ function getLeaguesAndExpandPlayers(players) {
         .then(function() {
             var arrayPlayers = [];
             expandedPlayers.forEach(function(summonerId) {
-                console.log(summonerId);
+                // console.log(summonerId);
                 arrayPlayers.push(summonerId);
             });
             return arrayPlayers;
         });
 }
 
-getLeaguesAndExpandPlayers(INITIAL_SEEDS)
-    .then(getMatches)
-    .then(getPlayers)
-    .then(getLeaguesAndExpandPlayers)
-    .then(getMatches)
-    .then(getPlayers)
-    .then(getLeaguesAndExpandPlayers)
+getLeaguesFromPlayersAndExpand(INITIAL_SEEDS)
+    .then(getMatchesFromPlayers)
+    .then(getPlayersFromMatches)
+    .then(getLeaguesFromPlayersAndExpand)
+    .then(getMatchesFromPlayers)
+    // .then(getPlayersFromMatches)
+    // .then(getLeaguesFromPlayersAndExpand)
     .then(function(results) {
         // results.forEach(function(each) { console.log(each); });
         // console.log(results);

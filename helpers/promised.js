@@ -90,6 +90,7 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler) {
             }
 
             if (numReceived >= numTotal) {
+                process.stdout.write('\n');
                 resolve();
             }
             else {

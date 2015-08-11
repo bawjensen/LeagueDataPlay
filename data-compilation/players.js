@@ -170,9 +170,9 @@ function fetchEverything() {
                             oldPlayers.add(player);
                         }
                     }
-                    
+
                     // Check if done
-                    if (oldPlayers.size > 10) {
+                    if (oldPlayers.size > 10000) {
                         resolve();
                     }
                     else {
@@ -185,9 +185,7 @@ function fetchEverything() {
     });
 }
 
-fetchEverything().then(function(result) {
-    console.log(result);
-}).then(console.log).catch(logErrorAndRethrow);
+fetchEverything().catch(logErrorAndRethrow);
 
 // getLeaguesFromPlayersAndExpand(INITIAL_SEEDS)
 //     .then(getMatchesFromPlayers)

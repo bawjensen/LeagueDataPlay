@@ -10,7 +10,7 @@ var MATCHES_DESIRED = 100000;
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
 var API_KEY = process.env.RIOT_KEY;
-var RATE_LIMIT = 100;
+var RATE_LIMIT = 1000;
 var INITIAL_SEEDS = new Set([
     51405,          // C9 Sneaky
     // 492066,         // C9 Hai
@@ -57,7 +57,6 @@ function getMatchesFromPlayers(players) {
     if (!players) return;
 
     console.log('Getting matches for', players.size, 'players');
-    // console.log(players);
     var matches = new Set();
 
     return promises.rateLimitedGet(players, RATE_LIMIT,
@@ -67,10 +66,6 @@ function getMatchesFromPlayers(players) {
             function handleMatchList(matchList) {
                 if (matchList.totalGames != 0) {
                     matchList.matches.forEach(function(matchListEntry) {
-                        // if (matchListEntry.platformId !== 'NA1') {
-                        //     console.error('\rInteresting, used to be non-NA:', matchListEntry);
-                        // }
-                        // else {
                         if (matchListEntry.platformId === 'NA1') {
                             matches.add(parseInt(matchListEntry.matchId));
                         }
@@ -78,12 +73,6 @@ function getMatchesFromPlayers(players) {
                 }
             }
         )
-        // .then(function() {
-        //     var arrayMatches = [];
-        //     // matches.forEach(function(matchId) { arrayMatches.push(matchId); });
-        //     for (let match of matches) { arrayMatches.push(match); }
-        //     return arrayMatches;
-        // })
         .then(function() {
             return matches;
         });
@@ -105,14 +94,6 @@ function getPlayersFromMatches(matches) {
                 });
             }
         )
-        // .then(function() {
-        //     var arrayPlayers = [];
-        //     // players.forEach(function(summonerId) {
-        //     //     arrayPlayers.push(summonerId);
-        //     // });
-        //     for (let summonerId of players) { arrayPlayers.push(summonerId); }
-        //     return arrayPlayers;
-        // })
         .then(function() {
             return players;
         });
@@ -125,10 +106,6 @@ function getLeaguesFromPlayersAndExpand(players) {
     var expandedPlayers = new Set(players); // start the larger set off with the existing people
 
     var groupedPlayers = [];
-
-    // for (var i = 0, l = players.size; i < l; i += 10) { // 10 is maximum # of summoners at once
-    //     groupedPlayers.push(players.slice(i, i + 10));
-    // }
 
     let i = 0;
     var summonerGroup = [];
@@ -169,14 +146,6 @@ function getLeaguesFromPlayersAndExpand(players) {
                 });
             }
         )
-        // .then(function() {
-        //     var arrayPlayers = [];
-        //     // expandedPlayers.forEach(function(summonerId) {
-        //     //     arrayPlayers.push(summonerId);
-        //     // });
-        //     for (let summonerId of expandedPlayers) { arrayPlayers.push(summonerId); }
-        //     return arrayPlayers;
-        // })
         .then(function() {
             return expandedPlayers;
         });

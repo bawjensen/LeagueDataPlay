@@ -11,11 +11,11 @@ var MATCHES_DESIRED = 100000;
 
 var API_KEY = process.env.RIOT_KEY;
 var RATE_LIMIT = 100;
-var INITIAL_SEEDS = [
+var INITIAL_SEEDS = new Set([
     51405,          // C9 Sneaky
     // 492066,         // C9 Hai
     47585509        // CyclicSpec
-];
+]);
 
 var matchListEndpoint = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';
 var matchEndpoint = 'https://na.api.pvp.net/api/lol/na/v2.2/match/';
@@ -142,8 +142,7 @@ function getLeaguesFromPlayersAndExpand(players) {
             i = 0;
         }
     }
-
-    console.log(groupedPlayers);
+    groupedPlayers.push(summonerGroup);
 
     return promises.rateLimitedGet(groupedPlayers, RATE_LIMIT,
             function mapPlayer(summonerIdList) {

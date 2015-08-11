@@ -190,7 +190,8 @@ function fetchEverything() {
                     }
                 })
                 .then(getPlayersFromMatches)
-                .then(loop);
+                .then(loop)
+                .catch(logErrorAndRethrow);
         }
 
         loop(INITIAL_SEEDS);

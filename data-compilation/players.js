@@ -64,6 +64,9 @@ function getMatchesFromPlayers(players) {
             function handleMatchList(matchList) {
                 if (matchList.totalGames != 0) {
                     matchList.matches.forEach(function(matchListEntry) {
+                        if (match.platformId !== 'NA1') {
+                            console.error('Whoops!');
+                        }
                         matches.add(parseInt(matchListEntry.matchId));
                     });
                 }

@@ -65,7 +65,7 @@ function getMatchesFromPlayers(players) {
                 if (matchList.totalGames != 0) {
                     matchList.matches.forEach(function(matchListEntry) {
                         if (matchListEntry.platformId !== 'NA1') {
-                            console.error('Whoops!', matchListEntry);
+                            console.error('Interesting, used to be non-NA:', matchListEntry);
                         }
                         else {
                             matches.add(parseInt(matchListEntry.matchId));
@@ -150,18 +150,55 @@ function getLeaguesFromPlayersAndExpand(players) {
         });
 }
 
-getLeaguesFromPlayersAndExpand(INITIAL_SEEDS)
-    .then(getMatchesFromPlayers)
-    .then(getPlayersFromMatches)
-    .then(getLeaguesFromPlayersAndExpand)
-    .then(getMatchesFromPlayers)
-    // .then(getPlayersFromMatches)
-    // .then(getLeaguesFromPlayersAndExpand)
-    .then(function(results) {
-        // results.forEach(function(each) { console.log(each); });
-        // console.log(results);
-        console.log(results.length);
-    })
-    .catch(function(err) {
-        console.log(err.stack);
+
+function fetchEverything() {
+    return new Promise(function(resolve, reject) {
+        var oldPlayers = new Set();
+        var oldMatches = new Set();
+
+        function loop(players) {
+            getLeaguesFromPlayersAndExpand(players)
+                .then(getMatchesFromPlayers)
+                .then(getPlayersFromMatches)
+                .then(function(players) {
+                    // Add players to list
+                    if (oldPlayers.size > 10) {
+                        resolve();
+                    }
+                    else {
+                        for (let player of players) {
+                            if (oldPlayers.has(player)) {
+                                players.delete(player);
+                            }
+                            else {
+                                oldPlayers.add(player);
+                            }
+                        }
+                        loop(players);
+                    }
+                });
+        }
+
+        loop(INITIAL_SEEDS);
     });
+}
+
+fetchEverything().then(function(result) {
+    console.log(result);
+}).then(console.log).catch(logErrorAndRethrow);
+
+// getLeaguesFromPlayersAndExpand(INITIAL_SEEDS)
+//     .then(getMatchesFromPlayers)
+//     .then(getPlayersFromMatches)
+//     .then(getLeaguesFromPlayersAndExpand)
+//     .then(getMatchesFromPlayers)
+//     // .then(getPlayersFromMatches)
+//     // .then(getLeaguesFromPlayersAndExpand)
+//     .then(function(results) {
+//         // results.forEach(function(each) { console.log(each); });
+//         // console.log(results);
+//         console.log(results.length);
+//     })
+//     .catch(function(err) {
+//         console.log(err.stack);
+//     });

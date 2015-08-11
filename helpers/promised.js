@@ -60,7 +60,7 @@ function persistentGet(url, identifier) {
         })
         .catch(function(err) {
             if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
-                console.error('Issue with:', url, '\n', err);
+                console.error('\rIssue with:', url, '\n', err);
                 return persistentGet(url, identifier);
             }
             else {

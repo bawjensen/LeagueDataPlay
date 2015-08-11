@@ -197,7 +197,7 @@ function fetchEverything() {
     });
 }
 
-fetchEverything().catch(logErrorAndRethrow);
+fetchEverything().then(function() { console.log('here'); }).catch(logErrorAndRethrow);
 
 // getLeaguesFromPlayersAndExpand(INITIAL_SEEDS)
 //     .then(getMatchesFromPlayers)

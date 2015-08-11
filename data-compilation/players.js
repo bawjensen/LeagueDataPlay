@@ -162,18 +162,20 @@ function fetchEverything() {
                 .then(getPlayersFromMatches)
                 .then(function(players) {
                     // Add players to list
+                    for (let player of players) {
+                        if (oldPlayers.has(player)) {
+                            players.delete(player);
+                        }
+                        else {
+                            oldPlayers.add(player);
+                        }
+                    }
+                    
+                    // Check if done
                     if (oldPlayers.size > 10) {
                         resolve();
                     }
                     else {
-                        for (let player of players) {
-                            if (oldPlayers.has(player)) {
-                                players.delete(player);
-                            }
-                            else {
-                                oldPlayers.add(player);
-                            }
-                        }
                         loop(players);
                     }
                 });

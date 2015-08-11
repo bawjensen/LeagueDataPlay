@@ -10,7 +10,7 @@ var MATCHES_DESIRED = 100000;
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
 var API_KEY = process.env.RIOT_KEY;
-var RATE_LIMIT = 1000;
+var RATE_LIMIT = 100;
 var INITIAL_SEEDS = new Set([
     51405,          // C9 Sneaky
     // 492066,         // C9 Hai

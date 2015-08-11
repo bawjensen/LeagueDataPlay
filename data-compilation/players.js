@@ -65,7 +65,7 @@ function getMatchesFromPlayers(players) {
                 if (matchList.totalGames != 0) {
                     matchList.matches.forEach(function(matchListEntry) {
                         if (matchListEntry.platformId !== 'NA1') {
-                            console.error('Interesting, used to be non-NA:', matchListEntry);
+                            console.error('\rInteresting, used to be non-NA:', matchListEntry);
                         }
                         else {
                             matches.add(parseInt(matchListEntry.matchId));

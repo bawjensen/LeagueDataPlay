@@ -64,10 +64,12 @@ function getMatchesFromPlayers(players) {
             function handleMatchList(matchList) {
                 if (matchList.totalGames != 0) {
                     matchList.matches.forEach(function(matchListEntry) {
-                        if (match.platformId !== 'NA1') {
-                            console.error('Whoops!');
+                        if (matchListEntry.platformId !== 'NA1') {
+                            console.error('Whoops!', matchListEntry);
                         }
-                        matches.add(parseInt(matchListEntry.matchId));
+                        else {
+                            matches.add(parseInt(matchListEntry.matchId));
+                        }
                     });
                 }
             }

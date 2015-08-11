@@ -67,10 +67,11 @@ function getMatchesFromPlayers(players) {
             function handleMatchList(matchList) {
                 if (matchList.totalGames != 0) {
                     matchList.matches.forEach(function(matchListEntry) {
-                        if (matchListEntry.platformId !== 'NA1') {
-                            console.error('\rInteresting, used to be non-NA:', matchListEntry);
-                        }
-                        else {
+                        // if (matchListEntry.platformId !== 'NA1') {
+                        //     console.error('\rInteresting, used to be non-NA:', matchListEntry);
+                        // }
+                        // else {
+                        if (matchListEntry.platformId === 'NA1') {
                             matches.add(parseInt(matchListEntry.matchId));
                         }
                     });

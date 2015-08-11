@@ -5,7 +5,7 @@ var promises    = require('../helpers/promised.js'),
 
 var NOW = (new Date).getTime();
 var WEEK_AGO = NOW - 604800000 / 7; // One week in milliseconds
-var MATCHES_DESIRED = 10000;
+var MATCHES_DESIRED = 100000;
 
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
@@ -164,7 +164,7 @@ function fetchEverything() {
 
         function loop(players) {
             if (!players) return;
-            
+
             getLeaguesFromPlayersAndExpand(players)
                 .then(getMatchesFromPlayers)
                 .then(function(matches) {

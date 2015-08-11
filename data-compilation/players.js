@@ -56,7 +56,7 @@ function logErrorAndRethrow(err) {
 function getMatchesFromPlayers(players) {
     if (!players) return;
 
-    console.log('Getting matches for', players.length, 'players');
+    console.log('Getting matches for', players.size, 'players');
     // console.log(players);
     var matches = new Set();
 
@@ -78,18 +78,21 @@ function getMatchesFromPlayers(players) {
                 }
             }
         )
+        // .then(function() {
+        //     var arrayMatches = [];
+        //     // matches.forEach(function(matchId) { arrayMatches.push(matchId); });
+        //     for (let match of matches) { arrayMatches.push(match); }
+        //     return arrayMatches;
+        // })
         .then(function() {
-            var arrayMatches = [];
-            matches.forEach(function(matchId) { arrayMatches.push(matchId); });
-            return arrayMatches;
-        })
-        .catch(logErrorAndRethrow);
+            return matches;
+        });
 }
 
 function getPlayersFromMatches(matches) {
     if (!matches) return;
 
-    console.log('Getting players for', matches.length, 'matches');
+    console.log('Getting players for', matches.size, 'matches');
     var players = new Set();
 
     return promises.rateLimitedGet(matches, RATE_LIMIT,
@@ -102,26 +105,45 @@ function getPlayersFromMatches(matches) {
                 });
             }
         )
+        // .then(function() {
+        //     var arrayPlayers = [];
+        //     // players.forEach(function(summonerId) {
+        //     //     arrayPlayers.push(summonerId);
+        //     // });
+        //     for (let summonerId of players) { arrayPlayers.push(summonerId); }
+        //     return arrayPlayers;
+        // })
         .then(function() {
-            var arrayPlayers = [];
-            players.forEach(function(summonerId) {
-                arrayPlayers.push(summonerId);
-            });
-            return arrayPlayers;
+            return players;
         });
 }
 
 function getLeaguesFromPlayersAndExpand(players) {
     if (!players) return;
 
-    console.log('Getting leagues for', players.length, 'players');
+    console.log('Getting leagues for', players.size, 'players');
     var expandedPlayers = new Set(players); // start the larger set off with the existing people
 
     var groupedPlayers = [];
 
-    for (var i = 0, l = players.length; i < l; i += 10) { // 10 is maximum # of summoners at once
-        groupedPlayers.push(players.slice(i, i + 10));
+    // for (var i = 0, l = players.size; i < l; i += 10) { // 10 is maximum # of summoners at once
+    //     groupedPlayers.push(players.slice(i, i + 10));
+    // }
+
+    let i = 0;
+    var summonerGroup = [];
+    for (let summonerId of players) {
+        summonerGroup.push(summonerId);
+        ++i;
+
+        if (i >= 10) {
+            groupedPlayers.push(summonerGroup);
+            summonerGroup = [];
+            i = 0;
+        }
     }
+
+    console.log(groupedPlayers);
 
     return promises.rateLimitedGet(groupedPlayers, RATE_LIMIT,
             function mapPlayer(summonerIdList) {
@@ -148,13 +170,16 @@ function getLeaguesFromPlayersAndExpand(players) {
                 });
             }
         )
+        // .then(function() {
+        //     var arrayPlayers = [];
+        //     // expandedPlayers.forEach(function(summonerId) {
+        //     //     arrayPlayers.push(summonerId);
+        //     // });
+        //     for (let summonerId of expandedPlayers) { arrayPlayers.push(summonerId); }
+        //     return arrayPlayers;
+        // })
         .then(function() {
-            var arrayPlayers = [];
-            expandedPlayers.forEach(function(summonerId) {
-                // console.log(summonerId);
-                arrayPlayers.push(summonerId);
-            });
-            return arrayPlayers;
+            return expandedPlayers;
         });
 }
 

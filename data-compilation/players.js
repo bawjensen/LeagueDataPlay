@@ -169,7 +169,7 @@ function fetchEverything() {
             getLeaguesFromPlayersAndExpand(players)
                 .then(getMatchesFromPlayers)
                 .then(function(matches) {
-                    // Add matches to list
+                    // Removing old matches, adding new to old
                     for (let match of matches) {
                         if (oldMatches.has(match)) {
                             matches.delete(match);
@@ -199,19 +199,3 @@ function fetchEverything() {
 }
 
 fetchEverything().then(function() { console.log('here'); }).catch(logErrorAndRethrow);
-
-// getLeaguesFromPlayersAndExpand(INITIAL_SEEDS)
-//     .then(getMatchesFromPlayers)
-//     .then(getPlayersFromMatches)
-//     .then(getLeaguesFromPlayersAndExpand)
-//     .then(getMatchesFromPlayers)
-//     // .then(getPlayersFromMatches)
-//     // .then(getLeaguesFromPlayersAndExpand)
-//     .then(function(results) {
-//         // results.forEach(function(each) { console.log(each); });
-//         // console.log(results);
-//         console.log(results.length);
-//     })
-//     .catch(function(err) {
-//         console.log(err.stack);
-//     });

@@ -3,23 +3,23 @@ var promises    = require('../helpers/promised.js'),
 
 // --------------------------------------- Global Variables -------------------------------------
 
-var NOW = (new Date).getTime();
-var WEEK_AGO = NOW - 604800000 / 7; // One week in milliseconds
+var NOW             = (new Date).getTime();
+var WEEK_AGO        = NOW - 604800000 / 7; // One week in milliseconds
 var MATCHES_DESIRED = 100000;
 
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
-var API_KEY = process.env.RIOT_KEY;
-var RATE_LIMIT = 100;
-var INITIAL_SEEDS = new Set([
+var API_KEY         = process.env.RIOT_KEY;
+var RATE_LIMIT      = 100;
+var INITIAL_SEEDS   = new Set([
     51405,          // C9 Sneaky
     // 492066,         // C9 Hai
     47585509        // CyclicSpec
 ]);
 
-var matchListEndpoint = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';
-var matchEndpoint = 'https://na.api.pvp.net/api/lol/na/v2.2/match/';
-var leagueEndpoint = 'https://na.api.pvp.net/api/lol/na/v2.5/league/by-summoner/'
+var matchListEndpoint   = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';
+var matchEndpoint       = 'https://na.api.pvp.net/api/lol/na/v2.2/match/';
+var leagueEndpoint      = 'https://na.api.pvp.net/api/lol/na/v2.5/league/by-summoner/'
 
 var matchListOptions = {
     'rankedQueues': 'RANKED_SOLO_5x5',

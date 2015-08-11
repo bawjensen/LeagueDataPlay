@@ -5,6 +5,7 @@ var promises    = require('../helpers/promised.js'),
 
 var NOW = (new Date).getTime();
 var WEEK_AGO = NOW - 604800000 / 7; // One week in milliseconds
+var MATCHES_DESIRED = 10000;
 
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
@@ -53,6 +54,8 @@ function logErrorAndRethrow(err) {
 // --------------------------------------- Main Functions ---------------------------------------
 
 function getMatchesFromPlayers(players) {
+    if (!players) return;
+
     console.log('Getting matches for', players.length, 'players');
     // console.log(players);
     var matches = new Set();
@@ -83,6 +86,8 @@ function getMatchesFromPlayers(players) {
 }
 
 function getPlayersFromMatches(matches) {
+    if (!matches) return;
+
     console.log('Getting players for', matches.length, 'matches');
     var players = new Set();
 
@@ -106,6 +111,8 @@ function getPlayersFromMatches(matches) {
 }
 
 function getLeaguesFromPlayersAndExpand(players) {
+    if (!players) return;
+
     console.log('Getting leagues for', players.length, 'players');
     var expandedPlayers = new Set(players); // start the larger set off with the existing people
 
@@ -153,32 +160,36 @@ function getLeaguesFromPlayersAndExpand(players) {
 
 function fetchEverything() {
     return new Promise(function(resolve, reject) {
-        var oldPlayers = new Set();
         var oldMatches = new Set();
 
         function loop(players) {
+            if (!players) return;
+            
             getLeaguesFromPlayersAndExpand(players)
                 .then(getMatchesFromPlayers)
-                .then(getPlayersFromMatches)
-                .then(function(players) {
-                    // Add players to list
-                    for (let player of players) {
-                        if (oldPlayers.has(player)) {
-                            players.delete(player);
+                .then(function(matches) {
+                    // Add matches to list
+                    for (let match of matches) {
+                        if (oldMatches.has(match)) {
+                            matches.delete(match);
                         }
                         else {
-                            oldPlayers.add(player);
+                            oldMatches.add(match);
                         }
                     }
 
                     // Check if done
-                    if (oldPlayers.size > 10000) {
+                    if (oldMatches.size > MATCHES_DESIRED) {
+                        console.log('\rWe got to', MATCHES_DESIRED, 'matches');
                         resolve();
+                        return; // Returning nothing breaks the chain
                     }
                     else {
-                        loop(players);
+                        return matches;
                     }
-                });
+                })
+                .then(getPlayersFromMatches)
+                .then(loop);
         }
 
         loop(INITIAL_SEEDS);

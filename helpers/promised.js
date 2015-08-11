@@ -69,13 +69,17 @@ function persistentGet(url, identifier) {
         });
 }
 
-function rateLimitedGet(list, limitSize, promiseMapper, resultHandler) {
+function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler) {
     return new Promise(function wrapper(resolve, reject) {
-        var numTotal = list.length ? list.length : list.size ? list.size : 0;
+        var isSet = (iterable instanceof Set) ? true : false;
+        var isArray = !isSet;
+
+        var numTotal = isArray ? iterable.length : iterable.size;
         var reportIncrement = Math.max(Math.round(numTotal / 100), 1);
-        var currentPosition = 0;
-        var numActive = 1; // Manually adjust for initial run
-        var numReceived = -1; // Manually adjust for initial run
+        var numActive = 1;      // Manually adjust for initial run
+        var numReceived = -1;   // Manually adjust for initial run
+        var iter = iterable[Symbol.iterator]();
+        var elem = iter.next();
 
         var handleResponseAndSendNext = function(initialRun) {
             --numActive;
@@ -85,18 +89,15 @@ function rateLimitedGet(list, limitSize, promiseMapper, resultHandler) {
                 process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');
             }
 
-            if (currentPosition >= numTotal) {
-                if (numActive === 0) {
-                    console.log('');
-                    resolve();
-                }
-                return;
+            if (numReceived >= numTotal) {
+                resolve();
             }
-
-            while (numActive < limitSize && currentPosition < numTotal) {
-                promiseMapper(list[currentPosition]).then(resultHandler).then(handleResponseAndSendNext).catch(logErrorAndRethrow);
-                ++numActive;
-                ++currentPosition;
+            else {
+                while (numActive < limitSize && !elem.done) {
+                    promiseMapper(elem.value).then(resultHandler).then(handleResponseAndSendNext).catch(logErrorAndRethrow);
+                    ++numActive;
+                    elem = iter.next();
+                }
             }
         };
 

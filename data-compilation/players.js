@@ -77,9 +77,8 @@ function getMatchesFromPlayers(visited, players) {
         });
 }
 
-function getPlayersFromMatches(visited, matches) {
+function getPlayersFromMatches(visited, newPlayers, matches) {
     console.log('Getting players for', matches.size, 'matches');
-    var newPlayers = new Set();
 
     return promises.rateLimitedGet(matches, RATE_LIMIT,
             function mapMatch(matchId) {
@@ -94,18 +93,15 @@ function getPlayersFromMatches(visited, matches) {
                     }
                 });
             }
-        )
-        .then(function() {
-            return newPlayers;
-        });
+        );
 }
 
-function expandPlayersFromMatches(visited, players) {
+function expandPlayersFromMatches(visited, newPlayers, players) {
     return getMatchesFromPlayers(visited, players)
-        .then(getPlayersFromMatches.bind(null, visited));
+        .then(getPlayersFromMatches.bind(null, visited, newPlayers));
 }
 
-function expandPlayersFromLeagues(visited, players) {
+function expandPlayersFromLeagues(visited, newPlayers, players) {
     console.log('Getting leagues for', players.size, 'players');
     var newPlayers = new Set(); // All purely newly discovered players
 
@@ -154,15 +150,13 @@ function expandPlayersFromLeagues(visited, players) {
                     });
                 });
             }
-        )
-        .then(function() {
-            return newPlayers;
-        });
+        );
 }
 
 function expandPlayers(visited, players) {
-    return expandPlayersFromLeagues(visited, players)
-        .then(expandPlayersFromMatches.bind(null, visited));
+    var newPlayers = new Set();
+    return expandPlayersFromLeagues(visited, newPlayers, players)
+        .then(expandPlayersFromMatches.bind(null, visited, newPlayers, players));
 }
 
 function compilePlayers() {

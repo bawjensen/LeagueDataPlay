@@ -54,7 +54,7 @@ function logErrorAndRethrow(err) {
 }
 function logAndIgnore404(err) {
     if (err.http_code === 404) {
-        console.log('\rIgnoring:', err);
+        console.log('\rIgnoring:', err.message);
     }
     else {
         logErrorAndRethrow(err);

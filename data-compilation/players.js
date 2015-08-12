@@ -108,7 +108,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
 
     let i = 0;
     var summonerGroup = [];
-    for (let summonerId of set) {
+    for (let summonerId of players) {
         summonerGroup.push(summonerId);
         ++i;
 

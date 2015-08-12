@@ -1,4 +1,5 @@
-var promises    = require('../helpers/promised.js'),
+var fs          = require('fs'),
+    promises    = require('../helpers/promised.js'),
     Queue       = require('../helpers/queue.js'),
     querystring = require('querystring');
 
@@ -165,13 +166,18 @@ function expandPlayers(visited, newPlayers, players) {
 }
 
 function compilePlayers() {
-    var players = new Set(INITIAL_SEEDS);
-    var visited = new Set();
-    var newPlayers = new Set();
+    var outFile     = fs.createWriteStream('visited.csv');
+    var players     = new Set(INITIAL_SEEDS);
+    var visited     = new Set();
+    var newPlayers  = new Set();
+
+    outFile.write('[51405']);
+    players.forEach(function(summonerId) { outFile.write(',' + summonerId); });
 
     var promiseChain = Promise.resolve();
 
     function loop() {
+        newPlayers.forEach(function(summonerId) { outFile.write(',' + summonerId); });
         console.log('visited: ', visited.size);
         console.log('players: ', players.size);
 
@@ -183,6 +189,9 @@ function compilePlayers() {
                     newPlayers.clear();
                 })
                 .then(loop);
+        }
+        else {
+            outFile.write(']')
         }
     }
 

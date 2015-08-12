@@ -140,10 +140,10 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                                     }
                                 });
                             }
-                            // else {
-                            //     // console.log('Removing', summonerId);
-                            //     newPlayers.delete(parseInt(summonerId));
-                            // }
+                            else {
+                                // console.log('Removing', summonerId);
+                                players.delete(parseInt(summonerId));
+                            }
                         }
                     });
                 });

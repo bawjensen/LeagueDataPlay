@@ -171,7 +171,7 @@ function compilePlayers() {
     var visited     = new Set();
     var newPlayers  = new Set();
 
-    outFile.write('[51405']);
+    outFile.write('[51405');
     players.forEach(function(summonerId) { outFile.write(',' + summonerId); });
 
     var promiseChain = Promise.resolve();

@@ -43,8 +43,8 @@ var leagueQuery     = '?' + querystring.stringify(leagueOptions);
 // --------------------------------------- Helper Functions -------------------------------------
 
 var tierChecker = new Set(['CHALLENGER', 'MASTER', 'DIAMOND', 'PLATINUM']);
-function highEnoughTier(leagueDto) {
-    return tierChecker.has(leagueDto.tier);
+function highEnoughTier(tier) {
+    return tierChecker.has(tier);
 }
 
 function logErrorAndRethrow(err) {
@@ -54,7 +54,7 @@ function logErrorAndRethrow(err) {
 
 // --------------------------------------- Main Functions ---------------------------------------
 
-function getMatchesFromPlayers(visited, players) {
+function getMatchesFromPlayers(players) {
     console.log('Getting matches for', players.size, 'players');
     var matches = new Set();
 
@@ -88,7 +88,7 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
                 match.participantIdentities.forEach(function(pIdentity) {
                     var summonerId = parseInt(pIdentity.player.summonerId);
                     if ( !(visited.has(summonerId)) ) {
-                        newPlayers.add(summonerId);
+                        newPlayers.add(summonerId); // Add so they're returned as result
                         visited.add(summonerId);
                     }
                 });
@@ -97,19 +97,18 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
 }
 
 function expandPlayersFromMatches(visited, newPlayers, players) {
-    return getMatchesFromPlayers(visited, players)
+    return getMatchesFromPlayers(players)
         .then(getPlayersFromMatches.bind(null, visited, newPlayers));
 }
 
 function expandPlayersFromLeagues(visited, newPlayers, players) {
     console.log('Getting leagues for', players.size, 'players');
-    var newPlayers = new Set(); // All purely newly discovered players
 
     var groupedPlayers = [];
 
     let i = 0;
     var summonerGroup = [];
-    for (let summonerId of players) {
+    for (let summonerId of set) {
         summonerGroup.push(summonerId);
         ++i;
 
@@ -131,8 +130,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
 
                     leagueDtoList.forEach(function(leagueDto) {
                         if (leagueDto.queue === 'RANKED_SOLO_5x5') {
-                            if (highEnoughTier(leagueDto)) {
-                                // console.log(leagueDto.entries.length, 'new players');
+                            if (highEnoughTier(leagueDto.tier)) {
                                 leagueDto.entries.forEach(function(leagueDtoEntry) {
                                     var summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
 
@@ -150,11 +148,10 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                     });
                 });
             }
-        );
+        ).catch(logErrorAndRethrow);
 }
 
-function expandPlayers(visited, players) {
-    var newPlayers = new Set();
+function expandPlayers(visited, newPlayers, players) {
     return expandPlayersFromLeagues(visited, newPlayers, players)
         .then(expandPlayersFromMatches.bind(null, visited, newPlayers, players));
 }
@@ -162,24 +159,31 @@ function expandPlayers(visited, players) {
 function compilePlayers() {
     var players = new Set(INITIAL_SEEDS);
     var visited = new Set();
+    var newPlayers = new Set();
+
+    var promiseChain = Promise.resolve();
 
     function loop() {
         console.log('visited: ', visited.size);
         console.log('players: ', players.size);
 
-        return expandPlayers(visited, players)
-            .then(function(newPlayers) {
-                players = newPlayers;
-                if (players.size) {
-                    loop();
-                }
-            });
+        if (players.size) {
+            promiseChain = promiseChain
+                .then(expandPlayers.bind(null, visited, newPlayers, players))
+                .then(function() {
+                    players = new Set(newPlayers);
+                    newPlayers.clear();
+                })
+                .then(loop);
+        }
     }
 
     loop();
+
+    return promiseChain;
 }
 
-compilePlayers();
+compilePlayers().catch(logErrorAndRethrow);
 
 // function fetchEverything() {
 //     return new Promise(function(resolve, reject) {

@@ -81,7 +81,7 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler) {
         var iter = iterable[Symbol.iterator]();
         var elem = iter.next();
 
-        var handleResponseAndSendNext = function(initialRun) {
+        var handleResponseAndSendNext = function() {
             --numActive;
             ++numReceived;
 
@@ -102,7 +102,7 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler) {
             }
         };
 
-        handleResponseAndSendNext(true);
+        handleResponseAndSendNext();
     })
     .catch(logErrorAndRethrow);
 }

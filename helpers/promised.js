@@ -37,7 +37,9 @@ function persistentCallback(url, resolve, reject, err, resp, body) {
         }, 500);
     }
     else if (resp.statusCode === 404) {
-        reject(Error('Resp code was 404: ' + url));
+        let error = new Error('Resp code was 404: ' + url);
+        error.http_code = 404;
+        reject(error);
     }
     else if (resp.statusCode !== 200) {
         reject(Error('Resp status code not 200: ' + resp.statusCode + '(' + url + ')'));
@@ -69,7 +71,7 @@ function persistentGet(url, identifier) {
         });
 }
 
-function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler) {
+function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, errorHandler) {
     return new Promise(function wrapper(resolve, reject) {
         var isSet = (iterable instanceof Set) ? true : false;
         var isArray = !isSet;
@@ -95,7 +97,10 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler) {
             }
             else {
                 while (numActive < limitSize && !elem.done) {
-                    promiseMapper(elem.value).then(resultHandler).then(handleResponseAndSendNext).catch(logErrorAndRethrow);
+                    promiseMapper(elem.value)
+                        .then(resultHandler)
+                        .then(handleResponseAndSendNext)
+                        .catch(errorHandler ? errorHandler : logErrorAndRethrow);
                     ++numActive;
                     elem = iter.next();
                 }

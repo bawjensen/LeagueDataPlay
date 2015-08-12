@@ -51,6 +51,14 @@ function logErrorAndRethrow(err) {
     console.log(err.stack);
     throw err;
 }
+function logAndIgnore404(err) {
+    if (err.http_code === 404) {
+        console.log(err.stack);
+    }
+    else {
+        logErrorAndRethrow(err);
+    }
+}
 
 // --------------------------------------- Main Functions ---------------------------------------
 
@@ -59,41 +67,41 @@ function getMatchesFromPlayers(players) {
     var matches = new Set();
 
     return promises.rateLimitedGet(players, RATE_LIMIT,
-            function mapPlayer(summonerId) {
-                return promises.persistentGet(matchListEndpoint + summonerId + matchListQuery);
-            },
-            function handleMatchList(matchList) {
-                if (matchList.totalGames != 0) {
-                    matchList.matches.forEach(function(matchListEntry) {
-                        if (matchListEntry.platformId === 'NA1') {
-                            matches.add(parseInt(matchListEntry.matchId));
-                        }
-                    });
-                }
+        function mapPlayer(summonerId) {
+            return promises.persistentGet(matchListEndpoint + summonerId + matchListQuery);
+        },
+        function handleMatchList(matchList) {
+            if (matchList.totalGames != 0) {
+                matchList.matches.forEach(function(matchListEntry) {
+                    if (matchListEntry.platformId === 'NA1') {
+                        matches.add(parseInt(matchListEntry.matchId));
+                    }
+                });
             }
-        )
+        },
+        logAndIgnore404)
         .then(function() {
             return matches;
         });
-}
+    }
 
 function getPlayersFromMatches(visited, newPlayers, matches) {
     console.log('Getting players for', matches.size, 'matches');
 
     return promises.rateLimitedGet(matches, RATE_LIMIT,
-            function mapMatch(matchId) {
-                return promises.persistentGet(matchEndpoint + matchId + matchQuery);
-            },
-            function handleMatch(match) {
-                match.participantIdentities.forEach(function(pIdentity) {
-                    var summonerId = parseInt(pIdentity.player.summonerId);
-                    if ( !(visited.has(summonerId)) ) {
-                        newPlayers.add(summonerId); // Add so they're returned as result
-                        visited.add(summonerId);
-                    }
-                });
-            }
-        );
+        function mapMatch(matchId) {
+            return promises.persistentGet(matchEndpoint + matchId + matchQuery);
+        },
+        function handleMatch(match) {
+            match.participantIdentities.forEach(function(pIdentity) {
+                var summonerId = parseInt(pIdentity.player.summonerId);
+                if ( !(visited.has(summonerId)) ) {
+                    newPlayers.add(summonerId); // Add so they're returned as result
+                    visited.add(summonerId);
+                }
+            });
+        },
+        logAndIgnore404);
 }
 
 function expandPlayersFromMatches(visited, newPlayers, players) {
@@ -121,34 +129,34 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
     groupedPlayers.push(summonerGroup);
 
     return promises.rateLimitedGet(groupedPlayers, RATE_LIMIT,
-            function mapPlayer(summonerIdList) {
-                return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery);
-            },
-            function handleLeague(playerLeagueMap) {
-                Object.keys(playerLeagueMap).forEach(function(summonerId) {
-                    var leagueDtoList = playerLeagueMap[summonerId];
+        function mapPlayer(summonerIdList) {
+            return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery);
+        },
+        function handleLeague(playerLeagueMap) {
+            Object.keys(playerLeagueMap).forEach(function(summonerId) {
+                var leagueDtoList = playerLeagueMap[summonerId];
 
-                    leagueDtoList.forEach(function(leagueDto) {
-                        if (leagueDto.queue === 'RANKED_SOLO_5x5') {
-                            if (highEnoughTier(leagueDto.tier)) {
-                                leagueDto.entries.forEach(function(leagueDtoEntry) {
-                                    var summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
+                leagueDtoList.forEach(function(leagueDto) {
+                    if (leagueDto.queue === 'RANKED_SOLO_5x5') {
+                        if (highEnoughTier(leagueDto.tier)) {
+                            leagueDto.entries.forEach(function(leagueDtoEntry) {
+                                var summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
 
-                                    if ( !(visited.has(summonerId)) ) {
-                                        newPlayers.add(summonerId);
-                                        visited.add(summonerId);
-                                    }
-                                });
-                            }
-                            else {
-                                // console.log('Removing', summonerId);
-                                players.delete(parseInt(summonerId));
-                            }
+                                if ( !(visited.has(summonerId)) ) {
+                                    newPlayers.add(summonerId);
+                                    visited.add(summonerId);
+                                }
+                            });
                         }
-                    });
+                        else {
+                            // console.log('Removing', summonerId);
+                            players.delete(parseInt(summonerId));
+                        }
+                    }
                 });
-            }
-        ).catch(logErrorAndRethrow);
+            });
+        },
+        logAndIgnore404).catch(logErrorAndRethrow);
 }
 
 function expandPlayers(visited, newPlayers, players) {

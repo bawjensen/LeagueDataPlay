@@ -1,4 +1,5 @@
 var promises    = require('../helpers/promised.js'),
+    Queue       = require('../helpers/queue.js'),
     querystring = require('querystring');
 
 // --------------------------------------- Global Variables -------------------------------------
@@ -53,9 +54,7 @@ function logErrorAndRethrow(err) {
 
 // --------------------------------------- Main Functions ---------------------------------------
 
-function getMatchesFromPlayers(players) {
-    if (!players) return;
-
+function getMatchesFromPlayers(visited, players) {
     console.log('Getting matches for', players.size, 'players');
     var matches = new Set();
 
@@ -78,11 +77,9 @@ function getMatchesFromPlayers(players) {
         });
 }
 
-function getPlayersFromMatches(matches) {
-    if (!matches) return;
-
+function getPlayersFromMatches(visited, matches) {
     console.log('Getting players for', matches.size, 'matches');
-    var players = new Set();
+    var newPlayers = new Set();
 
     return promises.rateLimitedGet(matches, RATE_LIMIT,
             function mapMatch(matchId) {
@@ -90,20 +87,27 @@ function getPlayersFromMatches(matches) {
             },
             function handleMatch(match) {
                 match.participantIdentities.forEach(function(pIdentity) {
-                    players.add(parseInt(pIdentity.player.summonerId));
+                    var summonerId = parseInt(pIdentity.player.summonerId);
+                    if ( !(visited.has(summonerId)) ) {
+                        newPlayers.add(summonerId);
+                        visited.add(summonerId);
+                    }
                 });
             }
         )
         .then(function() {
-            return players;
+            return newPlayers;
         });
 }
 
-function getLeaguesFromPlayersAndExpand(players) {
-    if (!players) return;
+function expandPlayersFromMatches(visited, players) {
+    return getMatchesFromPlayers(visited, players)
+        .then(getPlayersFromMatches.bind(null, visited));
+}
 
+function expandPlayersFromLeagues(visited, players) {
     console.log('Getting leagues for', players.size, 'players');
-    var expandedPlayers = new Set(players); // start the larger set off with the existing people
+    var newPlayers = new Set(); // All purely newly discovered players
 
     var groupedPlayers = [];
 
@@ -134,61 +138,92 @@ function getLeaguesFromPlayersAndExpand(players) {
                             if (highEnoughTier(leagueDto)) {
                                 // console.log(leagueDto.entries.length, 'new players');
                                 leagueDto.entries.forEach(function(leagueDtoEntry) {
-                                    expandedPlayers.add(parseInt(leagueDtoEntry.playerOrTeamId));
+                                    var summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
+
+                                    if ( !(visited.has(summonerId)) ) {
+                                        newPlayers.add(summonerId);
+                                        visited.add(summonerId);
+                                    }
                                 });
                             }
-                            else {
-                                // console.log('Removing', summonerId);
-                                expandedPlayers.delete(parseInt(summonerId));
-                            }
+                            // else {
+                            //     // console.log('Removing', summonerId);
+                            //     newPlayers.delete(parseInt(summonerId));
+                            // }
                         }
                     });
                 });
             }
         )
         .then(function() {
-            return expandedPlayers;
+            return newPlayers;
         });
 }
 
-
-function fetchEverything() {
-    return new Promise(function(resolve, reject) {
-        var oldMatches = new Set();
-
-        function loop(players) {
-            if (!players) return;
-
-            getLeaguesFromPlayersAndExpand(players)
-                .then(getMatchesFromPlayers)
-                .then(function(matches) {
-                    // Removing old matches, adding new to old
-                    for (let match of matches) {
-                        if (oldMatches.has(match)) {
-                            matches.delete(match);
-                        }
-                        else {
-                            oldMatches.add(match);
-                        }
-                    }
-
-                    // Check if done
-                    if (oldMatches.size > MATCHES_DESIRED) {
-                        console.log('\rWe got to', MATCHES_DESIRED, 'matches');
-                        resolve();
-                        return; // Returning nothing breaks the chain
-                    }
-                    else {
-                        return matches;
-                    }
-                })
-                .then(getPlayersFromMatches)
-                .then(loop)
-                .catch(logErrorAndRethrow);
-        }
-
-        loop(INITIAL_SEEDS);
-    });
+function expandPlayers(visited, players) {
+    return expandPlayersFromLeagues(visited, players)
+        .then(expandPlayersFromMatches.bind(null, visited));
 }
 
-fetchEverything().then(function() { console.log('here'); }).catch(logErrorAndRethrow);
+function compilePlayers() {
+    var players = new Set(INITIAL_SEEDS);
+    var visited = new Set();
+
+    function loop() {
+        console.log('visited: ', visited.size);
+        console.log('players: ', players.size);
+
+        return expandPlayers(visited, players)
+            .then(function(newPlayers) {
+                players = newPlayers;
+                if (players.size) {
+                    loop();
+                }
+            });
+    }
+
+    loop();
+}
+
+compilePlayers();
+
+// function fetchEverything() {
+//     return new Promise(function(resolve, reject) {
+//         var oldMatches = new Set();
+
+//         function loop(players) {
+//             if (!players) return;
+
+//             expandPlayersFromLeagues(players)
+//                 .then(getMatchesFromPlayers)
+//                 .then(function(matches) {
+//                     // Removing old matches, adding new to old
+//                     for (let match of matches) {
+//                         if (oldMatches.has(match)) {
+//                             matches.delete(match);
+//                         }
+//                         else {
+//                             oldMatches.add(match);
+//                         }
+//                     }
+
+//                     // Check if done
+//                     if (oldMatches.size > MATCHES_DESIRED) {
+//                         console.log('\rWe got to', MATCHES_DESIRED, 'matches');
+//                         resolve();
+//                         return; // Returning nothing breaks the chain
+//                     }
+//                     else {
+//                         return matches;
+//                     }
+//                 })
+//                 .then(getPlayersFromMatches)
+//                 .then(loop)
+//                 .catch(logErrorAndRethrow);
+//         }
+
+//         loop(INITIAL_SEEDS);
+//     });
+// }
+
+// fetchEverything().then(function() { console.log('here'); }).catch(logErrorAndRethrow);

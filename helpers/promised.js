@@ -98,8 +98,8 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, error
             else {
                 while (numActive < limitSize && !elem.done) {
                     promiseMapper(elem.value)
-                        .catch(errorHandler ? errorHandler : logErrorAndRethrow)
                         .then(resultHandler)
+                        .catch(errorHandler ? errorHandler : logErrorAndRethrow)
                         .then(handleResponseAndSendNext);
                     ++numActive;
                     elem = iter.next();

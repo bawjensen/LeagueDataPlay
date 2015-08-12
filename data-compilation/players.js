@@ -96,6 +96,7 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
         function handleMatch(match) {
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
+                if (!summonerId) console.log('YAY');
                 if ( !(visited.has(summonerId)) ) {
                     newPlayers.add(summonerId); // Add so they're returned as result
                     visited.add(summonerId);
@@ -141,7 +142,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                     if (leagueDto.queue === 'RANKED_SOLO_5x5') {
                         if (highEnoughTier(leagueDto.tier)) {
                             leagueDto.entries.forEach(function(leagueDtoEntry) {
-                                var summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
+                                let summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
 
                                 if ( !(visited.has(summonerId)) ) {
                                     newPlayers.add(summonerId);

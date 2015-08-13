@@ -16,7 +16,8 @@ var RATE_LIMIT      = 100;
 var INITIAL_SEEDS   = new Set([
     51405,          // C9 Sneaky
     // 492066,         // C9 Hai
-    47585509        // CyclicSpec
+    47585509,       // CyclicSpec,
+    1820135562      // (?)
 ]);
 
 var matchListEndpoint   = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';

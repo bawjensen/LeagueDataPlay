@@ -14,10 +14,9 @@ var MATCHES_DESIRED = 100000;
 var API_KEY         = process.env.RIOT_KEY;
 var RATE_LIMIT      = 100;
 var INITIAL_SEEDS   = new Set([
-    7869116,65574001,31429550,36367618,20371461,20089200,40660662,67110657,64811663,91576,
-    51405,          // C9 Sneaky
+    51405           // C9 Sneaky
     // 492066,         // C9 Hai
-    47585509        // CyclicSpec
+    // 47585509        // CyclicSpec
 ]);
 
 var matchListEndpoint   = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';

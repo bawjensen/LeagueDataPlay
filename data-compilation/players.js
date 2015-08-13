@@ -174,6 +174,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
         },
         function catchBadRequests(err) {
             if (err.http_code === 404) {
+                console.log('\rGot a full list of 404, removing all ids from players');
                 let offenders = err.identifier;
 
                 for (let summonerId of offenders) {

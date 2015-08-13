@@ -6,7 +6,7 @@ var fs          = require('fs'),
 // --------------------------------------- Global Variables -------------------------------------
 
 var NOW             = (new Date).getTime();
-var WEEK_AGO        = NOW - 604800000 / 7; // One week in milliseconds
+var WEEK_AGO        = NOW - 604800000; // One week in milliseconds
 var MATCHES_DESIRED = 100000;
 
 // console.log('Time threshold of a week ago:', WEEK_AGO);
@@ -203,7 +203,7 @@ function compilePlayers() {
             promiseChain = promiseChain
                 .then(function() {
                     var end = (new Date).getTime();
-                    var minutes = (end - start) / 3600000;
+                    var minutes = (end - start) / 60000;
                     console.log('Took:', minutes, 'minutes');
                 })
         }

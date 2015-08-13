@@ -96,7 +96,6 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
         function handleMatch(match) {
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
-                if (!summonerId) console.log('YAY');
                 if ( !(visited.has(summonerId)) ) {
                     newPlayers.add(summonerId); // Add so they're returned as result
                     visited.add(summonerId);
@@ -132,11 +131,20 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
 
     return promises.rateLimitedGet(groupedPlayers, RATE_LIMIT,
         function mapPlayer(summonerIdList) {
-            return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery);
+            return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery, summonerIdList);
         },
-        function handleLeague(playerLeagueMap) {
-            Object.keys(playerLeagueMap).forEach(function(summonerId) {
-                var leagueDtoList = playerLeagueMap[summonerId];
+        function handleLeague(objectResult) {
+            var playerLeagueMap = objectResult.data;
+            var summonerIdList = objectResult.id;
+
+            // Object.keys(playerLeagueMap).forEach(function(summonerId) {
+            summonerIdList.forEach(function(summonerId) {
+                var leagueDtoList = playerLeagueMap['' + summonerId];
+
+                if (!leagueDtoList) {
+                    players.delete(summonerId);
+                    return;
+                }
 
                 leagueDtoList.forEach(function(leagueDto) {
                     if (leagueDto.queue === 'RANKED_SOLO_5x5') {
@@ -200,7 +208,14 @@ function compilePlayers() {
     return promiseChain;
 }
 
-compilePlayers().catch(logErrorAndRethrow);
+var start = NOW;
+compilePlayers()
+    .then(function() {
+        var end = (new Date).getTime();
+        var minutes = (end - start) / 3600000;
+        console.log('Took:', minutes, 'minutes');
+    })
+    .catch(logErrorAndRethrow);
 
 // function fetchEverything() {
 //     return new Promise(function(resolve, reject) {

@@ -161,16 +161,18 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                     if (leagueDto.queue === 'RANKED_SOLO_5x5') {
                         if (highEnoughTier(leagueDto.tier)) {
                             leagueDto.entries.forEach(function(leagueDtoEntry) {
-                                let summonerId = parseInt(leagueDtoEntry.playerOrTeamId);
+                                let newSummonerId = parseInt(leagueDtoEntry.playerOrTeamId);
 
-                                if ( !(visited.has(summonerId)) ) {
-                                    newPlayers.add(summonerId);
-                                    visited.add(summonerId);
+                                if (newSummonerId === 1820135562) console.log(summonerId);
+
+                                if ( !(visited.has(newSummonerId)) ) {
+                                    newPlayers.add(newSummonerId);
+                                    visited.add(newSummonerId);
                                 }
                             });
                         }
                         else { // Summoner was too low tier to be considered
-                            players.delete(parseInt(summonerId));
+                            players.delete(summonerId);
                         }
                     }
                 });

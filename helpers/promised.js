@@ -85,7 +85,6 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, error
         var elem = iter.next();
 
         var handleResponseAndSendNext = function() {
-            console.log('handleResponseAndSendNext');
             --numActive;
             ++numReceived;
 

@@ -142,6 +142,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                 var leagueDtoList = playerLeagueMap['' + summonerId];
 
                 if (!leagueDtoList) {
+                    console.log('\runranked', summonerId);
                     players.delete(summonerId);
                     return;
                 }
@@ -175,7 +176,7 @@ function expandPlayers(visited, newPlayers, players) {
 }
 
 function compilePlayers() {
-    var outFile     = fs.createWriteStream('visited.csv');
+    var outFile     = fs.createWriteStream('visited.json');
     var players     = new Set(INITIAL_SEEDS);
     var visited     = new Set();
     var newPlayers  = new Set();
@@ -200,6 +201,12 @@ function compilePlayers() {
         }
         else {
             outFile.write(']')
+            promiseChain = promiseChain
+                .then(function() {
+                    var end = (new Date).getTime();
+                    var minutes = (end - start) / 3600000;
+                    console.log('Took:', minutes, 'minutes');
+                })
         }
     }
 
@@ -210,11 +217,6 @@ function compilePlayers() {
 
 var start = NOW;
 compilePlayers()
-    .then(function() {
-        var end = (new Date).getTime();
-        var minutes = (end - start) / 3600000;
-        console.log('Took:', minutes, 'minutes');
-    })
     .catch(logErrorAndRethrow);
 
 // function fetchEverything() {

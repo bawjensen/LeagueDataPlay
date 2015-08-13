@@ -137,13 +137,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
             return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery, summonerIdList);
         },
         function handleLeague(objectResult) {
-            if (!objectResult) {
-                console.log('\rEmpty result means a full list of unranked players, removing');
-                summonerIdList.forEach(function(summonerId) {
-                    players.delete(summonerId);
-                });
-                return;
-            }
+            if (!objectResult) return;
 
             var playerLeagueMap = objectResult.data;
             var summonerIdList = objectResult.id;
@@ -178,7 +172,18 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                 });
             });
         },
-        logAndIgnore404).catch(logErrorAndRethrow);
+        function catchBadRequests(err) {
+            if (err.http_code === 404) {
+                let offenders = err.identifier;
+
+                for (let summonerId of offenders) {
+                    players.delete(summonerId)
+                }
+            }
+            else {
+                throw err;
+            }
+        }).catch(logErrorAndRethrow);
 }
 
 function expandPlayers(visited, newPlayers, players) {

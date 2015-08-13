@@ -20,25 +20,26 @@ function get(url) {
     });
 }
 
-function persistentCallback(url, resolve, reject, err, resp, body) {
+function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
     if (err) {
         reject(err);
     }
     else if (resp.statusCode === 429) {
         // console.error('Got rate limited');
         setTimeout(function() {
-            request.get(url, persistentCallback.bind(null, url, resolve, reject));
+            request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         }, parseInt(resp.headers['retry-after']));
     }
     else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
         // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');
         setTimeout(function() {
-            request.get(url, persistentCallback.bind(null, url, resolve, reject));
+            request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         }, 500);
     }
     else if (resp.statusCode === 404) {
         let error = new Error('Resp code was 404: ' + url);
         error.http_code = 404;
+        error.identifier = identifier;
         reject(error);
     }
     else if (resp.statusCode !== 200) {
@@ -50,7 +51,7 @@ function persistentCallback(url, resolve, reject, err, resp, body) {
 }
 function persistentGet(url, identifier) {
     return new Promise(function get(resolve, reject) {
-            request.get(url, persistentCallback.bind(null, url, resolve, reject));
+            request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         })
         .then(JSON.parse)
         .then(function returnWithIdentifier(data) {

@@ -142,7 +142,6 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                 var leagueDtoList = playerLeagueMap['' + summonerId];
 
                 if (!leagueDtoList) {
-                    console.log('\runranked', summonerId);
                     players.delete(summonerId);
                     return;
                 }

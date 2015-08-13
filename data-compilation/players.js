@@ -138,7 +138,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
         },
         function handleLeague(objectResult) {
             if (!objectResult) {
-                console.log('\rGot a full list of unranked players, removing');
+                console.log('\rEmpty result means a full list of unranked players, removing');
                 summonerIdList.forEach(function(summonerId) {
                     players.delete(summonerId);
                 });

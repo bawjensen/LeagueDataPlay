@@ -72,6 +72,7 @@ function getMatchesFromPlayers(players) {
             return promises.persistentGet(matchListEndpoint + summonerId + matchListQuery);
         },
         function handleMatchList(matchList) {
+            if (!matchList) return;
             if (matchList.totalGames != 0) {
                 matchList.matches.forEach(function(matchListEntry) {
                     if (matchListEntry.platformId === 'NA1') {
@@ -94,6 +95,7 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
             return promises.persistentGet(matchEndpoint + matchId + matchQuery);
         },
         function handleMatch(match) {
+            if (!match) return;
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
                 if ( !(visited.has(summonerId)) ) {
@@ -134,6 +136,14 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
             return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery, summonerIdList);
         },
         function handleLeague(objectResult) {
+            if (!objectResult) {
+                console.log('\rGot a full list of unranked players, removing');
+                summonerIdList.forEach(function(summonerId) {
+                    players.delete(summonerId);
+                });
+                return;
+            }
+
             var playerLeagueMap = objectResult.data;
             var summonerIdList = objectResult.id;
 
@@ -141,7 +151,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
             summonerIdList.forEach(function(summonerId) {
                 var leagueDtoList = playerLeagueMap['' + summonerId];
 
-                if (!leagueDtoList) {
+                if (!leagueDtoList) { // If the summoner wasn't in the returned league, they are unranked/unplaced
                     players.delete(summonerId);
                     return;
                 }
@@ -158,8 +168,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                                 }
                             });
                         }
-                        else {
-                            // console.log('Removing', summonerId);
+                        else { // Summoner was too low tier to be considered
                             players.delete(parseInt(summonerId));
                         }
                     }

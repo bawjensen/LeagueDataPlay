@@ -56,7 +56,7 @@ function persistentGet(url, identifier) {
         .then(JSON.parse)
         .catch(function catchEndOfInputError(err) {
             if (err instanceof SyntaxError)
-                console.log('\rIgnoring:', err);
+                console.log('\rIgnoring:', url, err);
             else
                 throw err;
         })

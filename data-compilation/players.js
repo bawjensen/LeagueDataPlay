@@ -14,11 +14,11 @@ var MATCHES_DESIRED = 100000;
 var API_KEY         = process.env.RIOT_KEY;
 var DEFAULT_RATE_LIMIT = 100;
 var RATE_LIMIT      = process.argv[2] ? parseInt(process.argv[2]) : DEFAULT_RATE_LIMIT;
-var INITIAL_SEEDS   = new Set([
+var INITIAL_SEEDS   = [
     51405           // C9 Sneaky
     // 492066,         // C9 Hai
     // 47585509        // CyclicSpec
-]);
+];
 
 var matchListEndpoint   = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';
 var matchEndpoint       = 'https://na.api.pvp.net/api/lol/na/v2.2/match/';
@@ -198,12 +198,13 @@ function compilePlayers() {
 
     if (RATE_LIMIT !== DEFAULT_RATE_LIMIT) console.log('Rate limiting to:', RATE_LIMIT);
 
-    outFile.write('[51405');
+    outFile.write('[' + INITIAL_SEEDS.join());
 
     var promiseChain = Promise.resolve();
 
-    function loop() {
-        players.forEach(function(summonerId) { outFile.write(',' + summonerId); });
+    function loop(initialRun) {
+        if (!initialRun)
+            players.forEach(function(summonerId) { outFile.write(',' + summonerId); });
         console.log('visited: ', visited.size);
         console.log('players: ', players.size);
 
@@ -227,7 +228,7 @@ function compilePlayers() {
         }
     }
 
-    loop();
+    loop(true);
 
     return promiseChain;
 }

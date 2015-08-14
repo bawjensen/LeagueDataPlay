@@ -157,8 +157,6 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                             leagueDto.entries.forEach(function(leagueDtoEntry) {
                                 let newSummonerId = parseInt(leagueDtoEntry.playerOrTeamId);
 
-                                if (newSummonerId === 1820135562) console.log(summonerId);
-
                                 if ( !(visited.has(newSummonerId)) ) {
                                     newPlayers.add(newSummonerId);
                                     visited.add(newSummonerId);

@@ -54,6 +54,12 @@ function persistentGet(url, identifier) {
             request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         })
         .then(JSON.parse)
+        .catch(function catchEndOfInputError(err) {
+            if (err instanceof SyntaxError)
+                console.log('\rIgnoring:', err);
+            else
+                throw err;
+        })
         .then(function returnWithIdentifier(data) {
             return data ? // Return data+identifier, data or null
                         (identifier ?

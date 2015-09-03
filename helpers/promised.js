@@ -78,6 +78,14 @@ function persistentGet(url, identifier) {
         });
 }
 
+function rateLimitedThreadedGet(iterable, numThreads, limitNum, resultHandler, errorHandler) {
+    let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
+    for (let i = 0; i < numThreads; ++i) {
+        var newThread = child_process.fork();
+        newThread.send(iterable.slice(i * threadSliceSize, (i + 1) * threadSliceSize));
+    }
+}
+
 function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, errorHandler) {
     return new Promise(function wrapper(resolve, reject) {
         var isSet = (iterable instanceof Set) ? true : false;

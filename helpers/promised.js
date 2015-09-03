@@ -1,4 +1,6 @@
-var request = require('request');
+var request = require('request'),
+    fork    = require('child_process').fork,
+    uneval  = require('uneval');
 
 // --------------------------------------- Helpers ---------------------------------------
 
@@ -78,14 +80,6 @@ function persistentGet(url, identifier) {
         });
 }
 
-function rateLimitedThreadedGet(iterable, numThreads, limitNum, resultHandler, errorHandler) {
-    let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
-    for (let i = 0; i < numThreads; ++i) {
-        var newThread = child_process.fork();
-        newThread.send(iterable.slice(i * threadSliceSize, (i + 1) * threadSliceSize));
-    }
-}
-
 function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, errorHandler) {
     return new Promise(function wrapper(resolve, reject) {
         var isSet = (iterable instanceof Set) ? true : false;
@@ -128,8 +122,52 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, error
     .catch(logErrorAndRethrow);
 }
 
+function rateLimitedThreadedGet(iterable, numThreads, limitSize, promiseMapper, resultHandler, errorHandler) {
+    return new Promise(function(resolve, reject) {
+        let isArray = !!iterable.length;
+        let numReceived = 0;
+        let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
+        let results = [];
+        let numPerThread = Math.floor(limitSize / numThreads);
+        let numTotal = (iterable.length || iterable.size);
+
+        if (numThreads > numTotal)
+            numThreads = numTotal;
+
+        for (let i = 0; i < numThreads; ++i) {
+            let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
+
+            let sliced;
+            if (isArray) {
+                sliced = iterable.slice(i * threadSliceSize, (i + 1) * threadSliceSize);
+            }
+            else {
+                sliced = [];
+                let iter = iterable[Symbol.iterator]();
+                for (let i = 0; i < threadSliceSize; ++i) {
+                    sliced.push(iter.next().value);
+                }
+            }
+
+            console.log(typeof sliced);
+            console.log(sliced);
+            newThread.send({ data: sliced, limitSize: numPerThread, resultHandler: uneval(resultHandler), errorHandler: uneval(errorHandler), promiseMapper: uneval(promiseMapper) });
+
+            newThread.on('message', function(obj) {
+                results.push.apply(results, obj);
+                newThread.disconnect();
+
+                if (++numReceived >= numThreads) {
+                    resolve(results);
+                }
+            });
+        }
+    });
+}
+
 module.exports = {
     get: get,
     persistentGet: persistentGet,
-    rateLimitedGet: rateLimitedGet
+    rateLimitedGet: rateLimitedGet,
+    rateLimitedThreadedGet: rateLimitedThreadedGet
 };

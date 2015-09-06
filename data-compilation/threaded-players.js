@@ -12,7 +12,7 @@ var MATCHES_DESIRED = 100000;
 
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
-var API_KEY         = process.env.RIOT_KEY;
+var API_KEY         = process.env.BAS_RIOT_KEY;
 var DEFAULT_RATE_LIMIT = 500;
 var NUM_THREADS     = os.cpus().length - 2;
 var RATE_LIMIT      = process.argv[2] ? parseInt(process.argv[2]) : DEFAULT_RATE_LIMIT;
@@ -68,13 +68,14 @@ function logAndIgnore404(err) {
 
 function getMatchesFromPlayers(players) {
     console.log('Getting matches for', players.size, 'players');
-    var matches = new Set();
 
-    console.log(typeof players);
+    if (!players.size) return Promise.resolve();
+
+    var matches = new Set();
 
     return promises.rateLimitedThreadedGet(players, NUM_THREADS, RATE_LIMIT,
         function mapPlayer(summonerId) {
-            return promises.persistentGet(matchListEndpoint + summonerId + matchListQuery);
+            return { url: (matchListEndpoint + summonerId + matchListQuery), func: 'persistentGet' };
         },
         function handleMatchList(matchList) {
             if (!matchList) return;
@@ -95,9 +96,11 @@ function getMatchesFromPlayers(players) {
 function getPlayersFromMatches(visited, newPlayers, matches) {
     console.log('Getting players for', matches.size, 'matches');
 
+    if (!matches.size) return Promise.resolve();
+
     return promises.rateLimitedThreadedGet(matches, NUM_THREADS, RATE_LIMIT,
         function mapMatch(matchId) {
-            return promises.persistentGet(matchEndpoint + matchId + matchQuery);
+            return { url: (matchEndpoint + matchId + matchQuery), func: 'persistentGet' };
         },
         function handleMatch(match) {
             if (!match) return;
@@ -120,6 +123,8 @@ function expandPlayersFromMatches(visited, newPlayers, players) {
 function expandPlayersFromLeagues(visited, newPlayers, players) {
     console.log('Getting leagues for', players.size, 'players');
 
+    if (!players.size) return Promise.resolve();
+
     var groupedPlayers = [];
 
     let i = 0;
@@ -134,24 +139,25 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
             i = 0;
         }
     }
-    groupedPlayers.push(summonerGroup);
+    if (i !== 0) {
+        groupedPlayers.push(summonerGroup);
+    }
 
     return promises.rateLimitedThreadedGet(groupedPlayers, NUM_THREADS, RATE_LIMIT,
         function mapPlayer(summonerIdList) {
-            return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery, summonerIdList);
+            return { url: (leagueEndpoint + summonerIdList.join() + leagueQuery), func: 'persistentGet' };
         },
         function handleLeague(objectResult) {
             if (!objectResult) return;
 
-            var playerLeagueMap = objectResult.data;
-            var summonerIdList = objectResult.id;
+            var playerLeagueMap = objectResult;
 
             // Object.keys(playerLeagueMap).forEach(function(summonerId) {
-            summonerIdList.forEach(function(summonerId) {
-                var leagueDtoList = playerLeagueMap['' + summonerId];
+            Object.keys(playerLeagueMap).forEach(function(summonerId) {
+                var leagueDtoList = playerLeagueMap[summonerId];
 
                 if (!leagueDtoList) { // If the summoner wasn't in the returned league, they are unranked/unplaced
-                    players.delete(summonerId);
+                    players.delete(parseInt(summonerId));
                     return;
                 }
 
@@ -168,7 +174,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                             });
                         }
                         else { // Summoner was too low tier to be considered
-                            players.delete(summonerId);
+                            players.delete(parseInt(summonerId));
                         }
                     }
                 });

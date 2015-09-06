@@ -224,7 +224,7 @@ function compilePlayers() {
                     var end = (new Date).getTime();
                     var minutes = (end - start) / 60000;
                     console.log('Took:', minutes, 'minutes');
-                })
+                });
         }
     }
 

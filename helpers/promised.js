@@ -122,17 +122,15 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, error
     .catch(logErrorAndRethrow);
 }
 
-function rateLimitedThreadedGet(iterable, numThreads, limitSize, promiseMapper, resultHandler, errorHandler) {
+function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, resultHandler, errorHandler) {
     return new Promise(function(resolve, reject) {
         let isArray = !!iterable.length;
-        let numReceived = 0;
-        let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
+        let numTotal = (iterable.length || iterable.size);
+        numThreads = numThreads > numTotal ? numTotal : numThreads;
+        let threadSliceSize = Math.round((iterable.length || iterable.size) / numThreads);
         let results = [];
         let numPerThread = Math.floor(limitSize / numThreads);
-        let numTotal = (iterable.length || iterable.size);
-
-        if (numThreads > numTotal)
-            numThreads = numTotal;
+        let numReceived = 0;
 
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
@@ -149,17 +147,19 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, promiseMapper, 
                 }
             }
 
-            console.log(typeof sliced);
-            console.log(sliced);
-            newThread.send({ data: sliced, limitSize: numPerThread, resultHandler: uneval(resultHandler), errorHandler: uneval(errorHandler), promiseMapper: uneval(promiseMapper) });
+            newThread.send({ data: sliced.map(mapFunc), limitSize: numPerThread });
 
-            newThread.on('message', function(obj) {
-                results.push.apply(results, obj);
+            newThread.on('error', logErrorAndRethrow);
+
+            newThread.on('message', function(arrayResults) {
+                arrayResults.map(resultHandler);
                 newThread.disconnect();
 
                 if (++numReceived >= numThreads) {
-                    resolve(results);
+                    resolve();
                 }
+
+                console.log('Another thread finished:', numReceived);
             });
         }
     });

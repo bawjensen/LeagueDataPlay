@@ -79,6 +79,11 @@ function getMatchesFromPlayers(players) {
             return matchListEndpoint + summonerId + matchListQuery;
         },
         function handleMatchList(matchList) {
+            if (matchList.err) {
+                console.log('here');
+                console.log(matchList.data.stack);
+            }
+
             if (!matchList) return;
             if (matchList.totalGames != 0) {
                 matchList.matches.forEach(function(matchListEntry) {
@@ -87,8 +92,7 @@ function getMatchesFromPlayers(players) {
                     }
                 });
             }
-        },
-        logAndIgnore404)
+        })
         .then(function() {
             return matches;
         });
@@ -104,6 +108,11 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
             return matchEndpoint + matchId + matchQuery;
         },
         function handleMatch(match) {
+            if (match.err) {
+                console.log('here');
+                console.log(match.data.stack);
+            }
+
             if (!match) return;
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
@@ -112,8 +121,7 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
                     visited.add(summonerId);
                 }
             });
-        },
-        logAndIgnore404);
+        });
 }
 
 function expandPlayersFromMatches(visited, newPlayers, players) {
@@ -148,10 +156,13 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
         function mapPlayer(summonerIdList) {
             return leagueEndpoint + summonerIdList.join() + leagueQuery;
         },
-        function handleLeague(objectResult) {
-            if (!objectResult) return;
+        function handleLeague(playerLeagueMap) {
+            if (playerLeagueMap.err) {
+                console.log('here');
+                console.log(playerLeagueMap.data.stack);
+            }
 
-            var playerLeagueMap = objectResult;
+            if (!playerLeagueMap) return;
 
             // Object.keys(playerLeagueMap).forEach(function(summonerId) {
             Object.keys(playerLeagueMap).forEach(function(summonerId) {
@@ -180,19 +191,6 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
                     }
                 });
             });
-        },
-        function catchBadRequests(err) {
-            if (err.http_code === 404) {
-                console.log('\rGot a full list of 404, removing all ids from players');
-                let offenders = err.identifier;
-
-                for (let summonerId of offenders) {
-                    players.delete(summonerId)
-                }
-            }
-            else {
-                throw err;
-            }
         }).catch(logErrorAndRethrow);
 }
 

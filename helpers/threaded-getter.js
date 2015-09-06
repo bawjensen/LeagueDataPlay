@@ -36,7 +36,11 @@ process.on('message', function(obj) {
             ++numReceived;
 
             if (numReceived !== 0) {
+                console.log('yay');
                 process.send({ type: 'increment' });
+            }
+            else {
+                console.log('boo');
             }
 
             // process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');
@@ -56,7 +60,8 @@ process.on('message', function(obj) {
                                     .catch(catchRateLimit);
                             }
                             else {
-                                throw err;
+                                console.log(err.stack);
+                                return { err: 'Unknown error', data: err };
                             }
                         })
                         .then(function(result) { results.push(result); })

@@ -134,7 +134,7 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, error
     .catch(logErrorAndRethrow);
 }
 
-function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, resultHandler, errorHandler) {
+function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, resultHandler) {
     return new Promise(function(resolve, reject) {
         let isArray = !!iterable.length;
         let numTotal = (iterable.length || iterable.size);

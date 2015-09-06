@@ -163,8 +163,9 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
             else {
                 sliced = [];
                 let iter = iterable[Symbol.iterator]();
-                for (let i = 0; i < threadSliceSize; ++i) {
-                    sliced.push(iter.next().value);
+                let elem = iter.next();
+                for (let i = 0; i < threadSliceSize && !iter.done; ++i) {
+                    sliced.push(elem.value);
                 }
             }
 

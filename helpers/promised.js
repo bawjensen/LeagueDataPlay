@@ -1,6 +1,5 @@
 var request = require('request'),
-    fork    = require('child_process').fork,
-    uneval  = require('uneval');
+    fork    = require('child_process').fork;
 
 // --------------------------------------- Helpers ---------------------------------------
 

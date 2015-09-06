@@ -151,7 +151,7 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
             newThread.on('error', logErrorAndRethrow);
 
             newThread.on('message', function(arrayResults) {
-                process.stdout.write('\rAnother thread finished:', numReceived);
+                process.stdout.write('\rAnother thread finished: ' + numReceived);
 
                 arrayResults.map(resultHandler);
                 newThread.disconnect();

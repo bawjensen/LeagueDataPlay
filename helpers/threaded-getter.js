@@ -34,6 +34,10 @@ process.on('message', function(obj) {
             --numActive;
             ++numReceived;
 
+            if (numReceived !== 0) {
+                process.send({ type: 'increment' });
+            }
+
             // process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');
 
             if (numReceived >= numTotal) {

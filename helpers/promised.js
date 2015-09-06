@@ -149,7 +149,7 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
         let results = [];
         let numPerThread = Math.floor(limitSize / numThreads);
         let numFinished = 0;
-        let numReceived = 0;
+        let numReceived = 0; // Manually adjust for initial run
 
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');

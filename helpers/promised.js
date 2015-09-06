@@ -153,21 +153,16 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 
         console.log('Handling', numTotal, 'over', numThreads, 'threads');
 
+        let iter = iterable[Symbol.iterator]();
+
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
 
-            let sliced;
-            if (isArray) {
-                sliced = iterable.slice(i * threadSliceSize, (i + 1) * threadSliceSize);
-            }
-            else {
-                sliced = [];
-                let iter = iterable[Symbol.iterator]();
-                let elem = iter.next();
-                for (let i = 0; i < threadSliceSize && !elem.done; ++i) {
-                    sliced.push(elem.value);
-                    elem = iter.next();
-                }
+            let sliced = [];
+            let elem = iter.next();
+            for (let i = 0; i < threadSliceSize && !elem.done; ++i) {
+                sliced.push(elem.value);
+                elem = iter.next();
             }
 
             console.log(sliced.length);

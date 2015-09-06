@@ -150,6 +150,8 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
             numThreads -= 1;
         }
 
+        console.log('Handling', numTotal, 'over', numThreads, 'threads');
+
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
 

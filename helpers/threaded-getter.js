@@ -36,11 +36,11 @@ process.on('message', function(obj) {
             ++numReceived;
 
             if (numReceived !== 0) {
-                console.log('yay');
+                // console.log('yay');
                 process.send({ type: 'increment' });
             }
             else {
-                console.log('boo');
+                // console.log('boo');
             }
 
             // process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');

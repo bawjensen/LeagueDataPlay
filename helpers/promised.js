@@ -40,7 +40,7 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
         rateLimitError.code = resp.statusCode;
         rateLimitError.time = parseInt(resp.headers['retry-after']);
         rateLimitError.url = url;
-        throw rateLimitError;
+        reject(rateLimitError);
     }
     else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
         // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');

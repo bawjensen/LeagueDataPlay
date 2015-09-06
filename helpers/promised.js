@@ -143,7 +143,6 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
         let numPerThread = Math.floor(limitSize / numThreads);
         let numFinished = 0;
         let numReceived = 0; // Manually adjust for initial run
-        let received = {};
 
         // Edge case where the last thread wouldn't be handling any calls
         if ( numTotal === (threadSliceSize * (numThreads - 1)) ) {
@@ -169,9 +168,8 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
             newThread.on('error', logErrorAndRethrow);
 
             newThread.on('message', function(msg) {
-                if (msg.type === 'increment') {
+                if (msg.type === 'rec') {
                     ++numReceived;
-                    received[msg.num] = received[msg.num] ? received[msg.num] + 1 : 1;
                     process.stdout.write('\rReached: ' + numReceived + ' / ' + numTotal);
                 }
                 else if (msg.type === 'done') {
@@ -184,7 +182,6 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 
                     if (numFinished >= numThreads) {
                         process.stdout.write(' - Done.\n');
-                        console.log(received);
                         resolve();
                     }
                 }

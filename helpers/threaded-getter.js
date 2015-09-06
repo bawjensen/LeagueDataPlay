@@ -38,7 +38,7 @@ process.on('message', function(obj) {
 
             if (numReceived !== 0) {
                 // console.log('yay');
-                process.send({ type: 'increment', num: threadNum });
+                process.send({ type: 'rec' });
             }
             else {
                 // console.log('boo');

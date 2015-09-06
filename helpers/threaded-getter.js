@@ -45,7 +45,7 @@ process.on('message', function(obj) {
                     promises.persistentGet(elem.value)
                         .catch(function catchRateLimit(err) {
                             if (err.code === 429) {
-                                console.log('Got rate limited');
+                                console.log('three');
                                 sleepTime = err.time;
                                 return promises.sleep(err.time)
                                     .then(promises.persistentGet.bind(null, err.url))

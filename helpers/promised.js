@@ -36,7 +36,7 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
         // setTimeout(function() {
         //     request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         // }, parseInt(resp.headers['retry-after']));
-        var rateLimitError = new Error('Got rate limited');
+        var rateLimitError = new Error('Rate limit from Riot\'s API');
         rateLimitError.code = resp.statusCode;
         rateLimitError.time = parseInt(resp.headers['retry-after']);
         rateLimitError.url = url;
@@ -67,10 +67,13 @@ function persistentGet(url, identifier) {
         })
         .then(JSON.parse)
         .catch(function catchEndOfInputError(err) {
-            if (err instanceof SyntaxError)
+            console.log('one');
+            if (err instanceof SyntaxError) {
                 console.log('\rIgnoring:', url, err);
-            else
+            }
+            else {
                 throw err;
+            }
         })
         .then(function returnWithIdentifier(data) {
             return data ? // Return data+identifier, data or null
@@ -80,6 +83,7 @@ function persistentGet(url, identifier) {
                         : null;
         })
         .catch(function(err) {
+            console.log('two');
             if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
                 console.error('\rIssue with:', url, '\n', err);
                 return persistentGet(url, identifier);

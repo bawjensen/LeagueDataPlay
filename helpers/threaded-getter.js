@@ -69,5 +69,5 @@ process.on('message', function(obj) {
         handleResponseAndSendNext();
     })
     .catch(logErrorAndRethrow)
-    .then(function(results) { process.send(results); });
+    .then(function(results) { process.send({ type: 'done', data: results }); });
 });

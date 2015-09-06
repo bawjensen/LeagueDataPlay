@@ -23,10 +23,10 @@ process.on('message', function(obj) {
             --numActive;
             ++numReceived;
 
-            process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');
+            // process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');
 
             if (numReceived >= numTotal) {
-                process.stdout.write('\n');
+                // process.stdout.write('\n');
                 resolve(results);
             }
             else {

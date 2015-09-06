@@ -65,6 +65,10 @@ function persistentGet(url, identifier) {
     return new Promise(function get(resolve, reject) {
             request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         })
+        .catch(function(err) {
+            console.log('here:', err);
+            throw err;
+        })
         .then(JSON.parse)
         .catch(function catchEndOfInputError(err) {
             console.log('one');

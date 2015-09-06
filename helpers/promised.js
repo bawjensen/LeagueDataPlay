@@ -26,10 +26,14 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
         reject(err);
     }
     else if (resp.statusCode === 429) {
-        console.error('Got rate limited');
-        setTimeout(function() {
-            request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
-        }, parseInt(resp.headers['retry-after']));
+        // console.error('Got rate limited');
+        // setTimeout(function() {
+        //     request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
+        // }, parseInt(resp.headers['retry-after']));
+        var rateLimitError = new Error('Got rate limited');
+        rateLimitError.code = resp.statusCode;
+        rateLimitError.time = parseInt(resp.headers['retry-after']);
+        throw rateLimitError;
     }
     else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
         // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');

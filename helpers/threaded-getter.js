@@ -31,7 +31,18 @@ process.on('message', function(obj) {
             }
             else {
                 while (numActive < limitSize && !elem.done) {
-                    promises[elem.value.func](elem.value.url)
+                    promises.persistentGet(elem.value)
+                        .catch(function catchRateLimit(err) {
+                            if (err.code === 429) {
+                                console.log('Got rate limited');
+                                return promises.sleep(err.time)
+                                    .then(promises.persistentGet.bind(null, elem.value))
+                                    .catch(catchRateLimit);
+                            }
+                            else {
+                                throw err;
+                            }
+                        })
                         .then(function(result) { results.push(result); })
                         .then(handleResponseAndSendNext)
                         .catch(logErrorAndRethrow);

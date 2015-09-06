@@ -76,7 +76,7 @@ function getMatchesFromPlayers(players) {
 
     return promises.rateLimitedThreadedGet(players, NUM_THREADS, RATE_LIMIT,
         function mapPlayer(summonerId) {
-            return { url: (matchListEndpoint + summonerId + matchListQuery), func: 'persistentGet' };
+            return matchListEndpoint + summonerId + matchListQuery;
         },
         function handleMatchList(matchList) {
             if (!matchList) return;
@@ -101,7 +101,7 @@ function getPlayersFromMatches(visited, newPlayers, matches) {
 
     return promises.rateLimitedThreadedGet(matches, NUM_THREADS, RATE_LIMIT,
         function mapMatch(matchId) {
-            return { url: (matchEndpoint + matchId + matchQuery), func: 'persistentGet' };
+            return matchEndpoint + matchId + matchQuery;
         },
         function handleMatch(match) {
             if (!match) return;
@@ -146,7 +146,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
 
     return promises.rateLimitedThreadedGet(groupedPlayers, NUM_THREADS, RATE_LIMIT,
         function mapPlayer(summonerIdList) {
-            return { url: (leagueEndpoint + summonerIdList.join() + leagueQuery), func: 'persistentGet' };
+            return leagueEndpoint + summonerIdList.join() + leagueQuery;
         },
         function handleLeague(objectResult) {
             if (!objectResult) return;

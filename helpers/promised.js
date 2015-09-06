@@ -26,7 +26,7 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
         reject(err);
     }
     else if (resp.statusCode === 429) {
-        // console.error('Got rate limited');
+        console.error('Got rate limited');
         setTimeout(function() {
             request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         }, parseInt(resp.headers['retry-after']));

@@ -136,7 +136,6 @@ function rateLimitedGet(iterable, limitSize, promiseMapper, resultHandler, error
 
 function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, resultHandler) {
     return new Promise(function(resolve, reject) {
-        let isArray = !!iterable.length;
         let numTotal = (iterable.length || iterable.size);
         numThreads = Math.min(numThreads, numTotal); // Make sure you don't have more threads than calls to make
         let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
@@ -154,12 +153,12 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
         console.log('Handling', numTotal, 'over', numThreads, 'threads');
 
         let iter = iterable[Symbol.iterator]();
+        let elem = iter.next();
 
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
 
             let sliced = [];
-            let elem = iter.next();
             for (let i = 0; i < threadSliceSize && !elem.done; ++i) {
                 sliced.push(elem.value);
                 elem = iter.next();

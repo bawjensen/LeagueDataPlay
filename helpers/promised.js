@@ -188,8 +188,7 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 
                     if (numFinished >= numThreads) {
                         process.stdout.write(' - Done.\n');
-                        process.stdout.write(received);
-                        process.stdout.write('\n');
+                        console.log(received);
                         resolve();
                     }
                 }

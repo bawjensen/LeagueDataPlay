@@ -14,7 +14,8 @@ var MATCHES_DESIRED = 100000;
 
 var API_KEY         = process.env.BAS_RIOT_KEY;
 var DEFAULT_RATE_LIMIT = 500;
-var NUM_THREADS     = os.cpus().length - 2;
+var THREADS_CAP     = 6;
+var NUM_THREADS     = Math.min(os.cpus().length - 2, THREADS_CAP);
 var RATE_LIMIT      = process.argv[2] ? parseInt(process.argv[2]) : DEFAULT_RATE_LIMIT;
 var INITIAL_SEEDS   = [
     51405           // C9 Sneaky

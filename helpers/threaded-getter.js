@@ -18,6 +18,17 @@ process.on('message', function(obj) {
         let iter = iterable[Symbol.iterator]();
         let elem = iter.next();
         let results = [];
+        let sleepTime = false;
+
+        let rateLimitSleep = function() {
+            if (sleepTime) {
+                return promises.sleep(sleepTime)
+                    .then(function() { sleepTime = false });
+            }
+            else {
+                return Promise.resolve();
+            }
+        }
 
         let handleResponseAndSendNext = function() {
             --numActive;
@@ -35,8 +46,9 @@ process.on('message', function(obj) {
                         .catch(function catchRateLimit(err) {
                             if (err.code === 429) {
                                 console.log('Got rate limited');
+                                sleepTime = err.time;
                                 return promises.sleep(err.time)
-                                    .then(promises.persistentGet.bind(null, elem.value))
+                                    .then(promises.persistentGet.bind(null, err.url))
                                     .catch(catchRateLimit);
                             }
                             else {
@@ -44,6 +56,7 @@ process.on('message', function(obj) {
                             }
                         })
                         .then(function(result) { results.push(result); })
+                        .then(rateLimitSleep)
                         .then(handleResponseAndSendNext)
                         .catch(logErrorAndRethrow);
 

@@ -10,6 +10,12 @@ function logErrorAndRethrow(err) {
 
 // --------------------------------------- Main Functions --------------------------------
 
+function sleep(milliseconds) {
+    return new Promise(function(resolve, reject) {
+        setTimeout(resolve, milliseconds);
+    });
+}
+
 function get(url) {
     return new Promise(function(resolve, reject) {
         request.get(url, function(err, resp, body) {
@@ -33,6 +39,7 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
         var rateLimitError = new Error('Got rate limited');
         rateLimitError.code = resp.statusCode;
         rateLimitError.time = parseInt(resp.headers['retry-after']);
+        rateLimitError.url = url;
         throw rateLimitError;
     }
     else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
@@ -171,8 +178,9 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 }
 
 module.exports = {
-    get: get,
-    persistentGet: persistentGet,
-    rateLimitedGet: rateLimitedGet,
-    rateLimitedThreadedGet: rateLimitedThreadedGet
+    get:                    get,
+    persistentGet:          persistentGet,
+    rateLimitedGet:         rateLimitedGet,
+    rateLimitedThreadedGet: rateLimitedThreadedGet,
+    sleep:                  sleep
 };

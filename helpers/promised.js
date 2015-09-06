@@ -65,13 +65,8 @@ function persistentGet(url, identifier) {
     return new Promise(function get(resolve, reject) {
             request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
         })
-        .catch(function(err) {
-            console.log('here:', err);
-            throw err;
-        })
         .then(JSON.parse)
         .catch(function catchEndOfInputError(err) {
-            console.log('one');
             if (err instanceof SyntaxError) {
                 console.log('\rIgnoring:', url, err);
             }
@@ -87,7 +82,6 @@ function persistentGet(url, identifier) {
                         : null;
         })
         .catch(function(err) {
-            console.log('two');
             if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
                 console.error('\rIssue with:', url, '\n', err);
                 return persistentGet(url, identifier);

@@ -144,12 +144,17 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
     return new Promise(function(resolve, reject) {
         let isArray = !!iterable.length;
         let numTotal = (iterable.length || iterable.size);
-        numThreads = numThreads > numTotal ? numTotal : numThreads;
-        let threadSliceSize = Math.round((iterable.length || iterable.size) / numThreads);
+        numThreads = Math.min(numThreads, numTotal); // Make sure you don't have more threads than calls to make
+        let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
         let results = [];
         let numPerThread = Math.floor(limitSize / numThreads);
         let numFinished = 0;
         let numReceived = 0; // Manually adjust for initial run
+
+        // Edge case where the last thread wouldn't be handling any calls
+        if ( numTotal === (threadSliceSize * (numThreads - 1)) ) {
+            numThreads -= 1;
+        }
 
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
@@ -173,7 +178,7 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
             newThread.on('message', function(msg) {
                 if (msg.type === 'increment') {
                     ++numReceived;
-                    process.stdout.write('\rAnother response: ' + numReceived + ' / ' + numTotal);
+                    process.stdout.write('\rReached: ' + numReceived + ' / ' + numTotal);
                 }
                 else if (msg.type === 'done') {
                     let arrayResults = msg.data;

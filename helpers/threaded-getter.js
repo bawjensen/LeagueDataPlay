@@ -21,6 +21,7 @@ process.on('message', function(obj) {
         let sleepTime = false;
 
         let rateLimitSleep = function() {
+            console.log('Sleeping it!');
             if (sleepTime) {
                 return promises.sleep(sleepTime)
                     .then(function() { sleepTime = false });

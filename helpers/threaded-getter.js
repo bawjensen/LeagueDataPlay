@@ -10,6 +10,7 @@ process.on('message', function(obj) {
     let iterable = obj.data;
     let limitSize = obj.limitSize;
     let func = obj.func;
+    let threadNum = obj.num;
 
     return new Promise(function wrapper(resolve, reject) {
         let numTotal = iterable.length || iterable.size;
@@ -37,7 +38,7 @@ process.on('message', function(obj) {
 
             if (numReceived !== 0) {
                 // console.log('yay');
-                process.send({ type: 'increment' });
+                process.send({ type: 'increment', num: threadNum });
             }
             else {
                 // console.log('boo');
@@ -60,7 +61,7 @@ process.on('message', function(obj) {
                                     .catch(catchRateLimit);
                             }
                             else {
-                                console.log(err.stack);
+                                console.log('Unknown error:', err.stack)
                                 return { err: 'Unknown error', data: err };
                             }
                         })

@@ -164,8 +164,6 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
                 elem = iter.next();
             }
 
-            console.log(sliced.length);
-
             newThread.send({ data: sliced.map(mapFunc), limitSize: numPerThread, num: i });
 
             newThread.on('error', logErrorAndRethrow);

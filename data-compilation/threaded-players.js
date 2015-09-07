@@ -14,11 +14,12 @@ var MATCHES_DESIRED = 100000;
 
 var API_KEY         = process.env.BAS_RIOT_KEY;
 var DEFAULT_RATE_LIMIT = 500;
-var THREADS_CAP     = 6;
-var NUM_THREADS     = Math.min(os.cpus().length - 2, THREADS_CAP);
+var THREADS_CAP     = 1;
+var NUM_THREADS     = Math.max(Math.floor(os.cpus().length * 0.75), 1);
 var RATE_LIMIT      = process.argv[2] ? parseInt(process.argv[2]) : DEFAULT_RATE_LIMIT;
 var INITIAL_SEEDS   = [
-    51405           // C9 Sneaky
+    51405,          // C9 Sneaky
+    65399098        // TIP Rush
     // 492066,         // C9 Hai
     // 47585509        // CyclicSpec
 ];
@@ -142,7 +143,7 @@ function expandPlayersFromLeagues(visited, newPlayers, players) {
         summonerGroup.push(summonerId);
         ++i;
 
-        if (i >= 10) {
+        if (i >= 10) { // 10 summoners per /league call
             groupedPlayers.push(summonerGroup);
             summonerGroup = [];
             i = 0;

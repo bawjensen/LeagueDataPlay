@@ -169,15 +169,13 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 
             newThread.on('message', function(msg) {
                 if (msg.type === 'rec') {
-                    ++numReceived;
                     process.stdout.write('\rReached: ' + numReceived + ' / ' + numTotal);
+                    resultHandler(msg.data);
+                    ++numReceived;
                 }
                 else if (msg.type === 'done') {
-                    let arrayResults = msg.data;
-
                     ++numFinished;
 
-                    arrayResults.map(resultHandler);
                     newThread.disconnect();
 
                     if (numFinished >= numThreads) {

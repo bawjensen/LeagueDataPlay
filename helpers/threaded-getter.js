@@ -37,18 +37,12 @@ process.on('message', function(obj) {
             ++numReceived;
 
             if (numReceived !== 0) {
-                // console.log('yay');
                 process.send({ type: 'rec' });
             }
-            else {
-                // console.log('boo');
-            }
-
-            // process.stdout.write('\rReached ' + numReceived + ' / ' + numTotal + ' requests');
 
             if (numReceived >= numTotal) {
-                // process.stdout.write('\n');
-                resolve(results);
+                // resolve(results);
+                resolve();
             }
             else {
                 while (numActive < limitSize && !elem.done) {
@@ -65,7 +59,8 @@ process.on('message', function(obj) {
                                 return { err: 'Unknown error', data: err };
                             }
                         })
-                        .then(function(result) { results.push(result); })
+                        // .then(function(result) { results.push(result); })
+                        .then(function(result) { process.send({ type: 'rec', data: result }); })
                         .then(rateLimitSleep)
                         .then(handleResponseAndSendNext)
                         .catch(logErrorAndRethrow);
@@ -79,5 +74,5 @@ process.on('message', function(obj) {
         handleResponseAndSendNext();
     })
     .catch(logErrorAndRethrow)
-    .then(function(results) { process.send({ type: 'done', data: results }); });
+    .then(function() { process.send({ type: 'done' }); });
 });

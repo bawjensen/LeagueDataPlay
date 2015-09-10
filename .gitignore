@@ -1,1 +1,4 @@
 node_modules/
+db/
+test.js
+visited*.json

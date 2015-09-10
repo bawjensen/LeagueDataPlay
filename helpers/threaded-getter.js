@@ -1,4 +1,5 @@
-var promises = require('./promised.js');
+var CachingLayer = require('./caching-layer.js'),
+    promises = require('./promised.js');
 
 function logErrorAndRethrow(err) {
     console.error(err.stack);
@@ -36,9 +37,9 @@ process.on('message', function(obj) {
             --numActive;
             ++numReceived;
 
-            if (numReceived !== 0) {
-                process.send({ type: 'rec' });
-            }
+            // if (numReceived !== 0) {
+            //     process.send({ type: 'rec' });
+            // }
 
             if (numReceived >= numTotal) {
                 // resolve(results);
@@ -46,12 +47,15 @@ process.on('message', function(obj) {
             }
             else {
                 while (numActive < limitSize && !elem.done) {
-                    promises.persistentGet(elem.value)
+                    CachingLayer.get(elem.value)
                         .catch(function catchRateLimit(err) {
-                            if (err.code === 429) {
+                            if (err.code === 403) {
+                                process.send({ type: 'quit', err: err.stack });
+                            }
+                            else if (err.code === 429) {
                                 sleepTime = err.time;
                                 return promises.sleep(err.time)
-                                    .then(promises.persistentGet.bind(null, err.url))
+                                    .then(promises.get.bind(null, err.url))
                                     .catch(catchRateLimit);
                             }
                             else {
@@ -60,7 +64,16 @@ process.on('message', function(obj) {
                             }
                         })
                         // .then(function(result) { results.push(result); })
-                        .then(function(result) { process.send({ type: 'rec', data: result }); })
+                        .then(function(result) {
+                            try {
+                                process.send({ type: 'rec', data: result });
+                            }
+                            catch (err) {
+                                console.log('Child of a terminated parent ending here');
+                                CachingLayer.end();
+                                process.exit(); // Exit quietly if parent has ended
+                            }
+                        })
                         .then(rateLimitSleep)
                         .then(handleResponseAndSendNext)
                         .catch(logErrorAndRethrow);
@@ -74,5 +87,5 @@ process.on('message', function(obj) {
         handleResponseAndSendNext();
     })
     .catch(logErrorAndRethrow)
-    .then(function() { process.send({ type: 'done' }); });
+    .then(function() { CachingLayer.end(); process.send({ type: 'done' }); });
 });

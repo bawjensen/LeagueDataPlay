@@ -1,4 +1,5 @@
-var request = require('request'),
+var CachingLayer = require('./caching-layer.js'),
+    request = require('request'),
     fork    = require('child_process').fork;
 
 // --------------------------------------- Helpers ---------------------------------------
@@ -32,15 +33,16 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
         reject(err);
     }
     else if (resp.statusCode === 429) {
-        // console.error('Got rate limited');
-        // setTimeout(function() {
-        //     request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
-        // }, parseInt(resp.headers['retry-after']));
         var rateLimitError = new Error('Rate limit from Riot\'s API');
         rateLimitError.code = resp.statusCode;
         rateLimitError.time = parseInt(resp.headers['retry-after']);
         rateLimitError.url = url;
         reject(rateLimitError);
+    }
+    else if (resp.statusCode === 403) {
+        var forbiddenError = new Error('Forbidden from Riot\'s API');
+        forbiddenError.code = resp.statusCode;
+        reject(forbiddenError);
     }
     else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
         // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');
@@ -63,7 +65,14 @@ function persistentCallback(url, identifier, resolve, reject, err, resp, body) {
 }
 function persistentGet(url, identifier) {
     return new Promise(function get(resolve, reject) {
+            // if (Math.random() < 0.1) {
             request.get(url, persistentCallback.bind(null, url, identifier, resolve, reject));
+                // persistentCallback(url, identifier, resolve, reject, null, { statusCode: 200 }, dummyLeagueResponse);
+                // CachingLayer.get(url);
+            // }
+            // else {
+            //     persistentCallback(url, identifier, resolve, reject, null, { statusCode: 429, headers: { 'retry-after': 500 } });
+            // }
         })
         .then(JSON.parse)
         .catch(function catchEndOfInputError(err) {
@@ -138,16 +147,16 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
     return new Promise(function(resolve, reject) {
         let numTotal = (iterable.length || iterable.size);
         numThreads = Math.min(numThreads, numTotal); // Make sure you don't have more threads than calls to make
-        let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
+        // let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
         let results = [];
         let numPerThread = Math.floor(limitSize / numThreads);
         let numFinished = 0;
         let numReceived = 0; // Manually adjust for initial run
+        let numOverloadedThreads = (numTotal % numThreads); // Number of threads that get n + 1 instead of n calls
+        let threadSliceSize;
 
         // Edge case where the last thread wouldn't be handling any calls
-        if ( numTotal === (threadSliceSize * (numThreads - 1)) ) {
-            numThreads -= 1;
-        }
+        // numThreads
 
         console.log('Handling', numTotal, 'over', numThreads, 'threads');
 
@@ -156,6 +165,7 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/../helpers/threaded-getter.js');
+            threadSliceSize = Math.floor(numTotal / numThreads) + (i < numOverloadedThreads ? 1 : 0);
 
             let sliced = [];
             for (let i = 0; i < threadSliceSize && !elem.done; ++i) {
@@ -169,9 +179,9 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
 
             newThread.on('message', function(msg) {
                 if (msg.type === 'rec') {
-                    process.stdout.write('\rReached: ' + numReceived + ' / ' + numTotal);
-                    resultHandler(msg.data);
                     ++numReceived;
+                    resultHandler(msg.data);
+                    process.stdout.write('\rReached: ' + numReceived + ' / ' + numTotal);
                 }
                 else if (msg.type === 'done') {
                     ++numFinished;
@@ -182,6 +192,10 @@ function rateLimitedThreadedGet(iterable, numThreads, limitSize, mapFunc, result
                         process.stdout.write(' - Done.\n');
                         resolve();
                     }
+                }
+                else if (msg.type === 'quit') {
+                    console.log('Got quit call:', msg.err, msg.err.stack);
+                    process.exit(1);
                 }
             });
         }

@@ -12,8 +12,8 @@ var MATCHES_DESIRED = 100000;
 
 // console.log('Time threshold of a week ago:', WEEK_AGO);
 
-var API_KEY         = process.env.BAS_RIOT_KEY;
-var DEFAULT_RATE_LIMIT = 500;
+var API_KEY         = process.env.DEV_RIOT_KEY;
+var DEFAULT_RATE_LIMIT = 10;
 var THREADS_CAP     = 1;
 var NUM_THREADS     = Math.max(Math.floor(os.cpus().length * 0.75), 1);
 var RATE_LIMIT      = process.argv[2] ? parseInt(process.argv[2]) : DEFAULT_RATE_LIMIT;

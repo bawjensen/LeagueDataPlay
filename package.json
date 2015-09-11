@@ -18,7 +18,6 @@
   "homepage": "https://github.com/bawjensen/LeagueDataPlay",
   "dependencies": {
     "mongodb": "^2.0.42",
-    "request": "^2.60.0",
-    "uneval": "^0.1.2"
+    "request": "^2.60.0"
   }
 }

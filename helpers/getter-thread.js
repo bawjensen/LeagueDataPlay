@@ -1,8 +1,10 @@
 'use strict';
 
-
 var request = require('request'),
-    cachingLayer = require('./caching-layer.js');
+    CachingLayer = require('./caching-layer.js');
+
+var threadNum;
+var cachingLayer;
 
 function logErrorAndRethrow(err) {
     console.error(err.stack);
@@ -11,60 +13,62 @@ function logErrorAndRethrow(err) {
 
 function finishUp() {
     try {
+        cachingLayer.end();
         process.send({ type: 'done' });
+        // process.disconnect(); // Attempting to close children
     }
     catch (err) {
         console.log('Child of a terminated parent ending here');
-        CachingLayer.end();
         process.exit(); // Exit quietly if parent has ended
     }
 
-}
-
-function cachedGet(url) {
-    // return new Promise(function get(resolve, reject) {
-    //     request.get(url, getCallback.bind(null, url, resolve, reject));
-    // });
-    return cachingLayer.fetch(url);
 }
 
 function getCallback(url, resolve, reject, err, resp, body) {
     if (err) {
         reject(err);
     }
-    else if (resp.statusCode === 429) {
-        // console.error('Got rate limited');
-        // setTimeout(function() {
-        //     request.get(url, getCallback.bind(null, url, identifier, resolve, reject));
-        // }, parseInt(resp.headers['retry-after']));
-        var rateLimitError = new Error('Rate limit from Riot\'s API');
-        rateLimitError.code = resp.statusCode;
-        rateLimitError.time = parseInt(resp.headers['retry-after']);
-        rateLimitError.url = url;
-        reject(rateLimitError);
-    }
-    else if (resp.statusCode === 503 || resp.statusCode === 500 || resp.statusCode === 504) {
-        // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');
-        setTimeout(function() {
-            request.get(url, getCallback.bind(null, url, resolve, reject));
-        }, 500);
-    }
-    else if (resp.statusCode === 404) {
-        let error = new Error('Resp code was 404: ' + url);
-        error.http_code = 404;
-        // error.identifier = identifier;
-        reject(error);
-    }
-    else if (resp.statusCode !== 200) {
-        reject(Error('Resp status code not 200: ' + resp.statusCode + '(' + url + ')'));
-    }
     else {
-        resolve(body);
+        switch(resp.statusCode) {
+            case 200:
+                // console.log(body);
+                resolve({ body: body, id: url });
+                break;
+            case 429:
+                // console.error('Got rate limited');
+                // setTimeout(function() {
+                //     request.get(url, getCallback.bind(null, url, identifier, resolve, reject));
+                // }, parseInt(resp.headers['retry-after']));
+                var rateLimitError = new Error('Rate limit from Riot\'s API');
+                rateLimitError.code = resp.statusCode;
+                rateLimitError.time = parseInt(resp.headers['retry-after']);
+                rateLimitError.url = url;
+                reject(rateLimitError);
+                break;
+            case 500:
+            case 503:
+            case 504:
+                // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');
+                setTimeout(function() {
+                    request.get(url, getCallback.bind(null, url, resolve, reject));
+                }, 500);
+                break;
+            case 404:
+                let error = new Error('Resp code was 404: ' + url);
+                error.http_code = 404;
+                // error.identifier = identifier;
+                reject(error);
+                break;
+            default:
+                reject(Error('Unhandled resp statusCode: ' + resp.statusCode + '(' + url + ')'));
+                break;
+        }
     }
 }
 function get(url) {
-    return cachedGet(url)
-        .then(JSON.parse)
+    return new Promise(function(resolve, reject) {
+            request.get(url, getCallback.bind(undefined, url, resolve, reject));
+        })
         .catch(function catchEndOfInputError(err) {
             if (err instanceof SyntaxError) {
                 console.log('\rIgnoring:', url, err);
@@ -84,8 +88,22 @@ function get(url) {
         });
 }
 
+function fetch(url) {
+    var promise;
+
+    // if (Math.random() < 0.1) {
+        promise = cachingLayer.fetch(url)
+            .then(JSON.parse);
+    // }
+    // else {
+    //     promise = 
+    // }
+
+    return promise;
+}
+
 function fetchAndSend(url) {
-    return get(url)
+    return fetch(url)
         .catch(function catchRateLimit(err) {
             if (err.code === 429) {
                 sleepTime = err.time;
@@ -95,7 +113,7 @@ function fetchAndSend(url) {
             }
             else {
                 console.log('Unknown error:', err.stack)
-                return { err: 'Unknown error', data: err };
+                return { err: 'Unknown error', data: err.stack };
             }
         })
         // .then(function(result) { results.push(result); })
@@ -113,9 +131,11 @@ function fetchAndSend(url) {
 process.on('message', function(obj) {
     // console.log('Received:', obj);
     let iterable = obj.data;
-    let limitSize = obj.limitSize;
-    let func = obj.func;
-    let threadNum = obj.num;
+    let maxRequests = obj.maxRequests;
+
+    cachingLayer = new CachingLayer(get);
+    
+    threadNum = obj.num;
 
     return new Promise(function wrapper(resolve, reject) {
         let numTotal = iterable.length || iterable.size;
@@ -150,7 +170,7 @@ process.on('message', function(obj) {
                 resolve();
             }
             else {
-                while (numActive < limitSize && !elem.done) {
+                while (numActive < maxRequests && !elem.done) {
                     fetchAndSend(elem.value)
                         .then(rateLimitSleep)
                         .then(handleResponseAndSendNext)

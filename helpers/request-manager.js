@@ -4,7 +4,7 @@ var constants   = require('./constants.js'),
     fork        = require('child_process').fork;
 
 function logErrorAndRethrow(err) {
-    console.error(err.stack);
+    console.error(err.stack || err);
     throw err;
 }
 
@@ -22,16 +22,13 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
     return new Promise(function(resolve, reject) {
         let numRequests = (iterable.length || iterable.size);
         let numThreads = Math.min(self.numThreads, numRequests); // Make sure you don't have more threads than calls to make
-        let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
+        // let threadSliceSize = Math.ceil((iterable.length || iterable.size) / numThreads);
         let results = [];
         let maxRequestsPerThread = Math.floor(self.maxRequests / numThreads);
         let numFinished = 0;
         let numReceived = 0; // Manually adjust for initial run
-
-        // Edge case where the last thread wouldn't be handling any calls
-        if ( numRequests === (threadSliceSize * (numThreads - 1)) ) {
-            numThreads -= 1;
-        }
+        let numOverloadedThreads = (numRequests % numThreads); // Number of threads that get n + 1 instead of n calls
+        let threadSliceSize;
 
         console.log('Handling', numRequests, 'over', numThreads, 'threads');
 
@@ -41,15 +38,16 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
         for (let i = 0; i < numThreads; ++i) {
             let newThread = fork(__dirname + '/getter-thread.js');
 
+            threadSliceSize = Math.floor(numRequests / numThreads) + (i < numOverloadedThreads ? 1 : 0);
             let sliced = [];
             for (let i = 0; i < threadSliceSize && !elem.done; ++i) {
                 sliced.push(elem.value);
                 elem = iter.next();
             }
 
-            newThread.send({ data: sliced.map(mapFunc), limitSize: maxRequestsPerThread, num: i });
+            newThread.send({ data: sliced.map(mapFunc), maxRequests: maxRequestsPerThread, num: i });
 
-            newThread.on('error', logErrorAndRethrow);
+            newThread.on('error', logErrorAndRethrow); // Doesn't seem to do anything?
 
             newThread.on('message', function(msg) {
                 if (msg.type === 'rec') {
@@ -60,7 +58,8 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
                 else if (msg.type === 'done') {
                     ++numFinished;
 
-                    newThread.disconnect();
+                    // newThread.disconnect();
+                    newThread.kill(); // Is this necessary?
 
                     if (numFinished >= numThreads) {
                         process.stdout.write(' - Done.\n');

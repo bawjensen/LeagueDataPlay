@@ -62,12 +62,13 @@ function getMatchesFromPlayers(currentPlayers, visitedMatches) {
             return constants.MATCHLIST_ENDPOINT + summonerId + constants.MATCHLIST_QUERY;
         },
         function handleMatchList(matchList) {
+            if (!matchList) return;
+
             if (matchList.err) {
-                console.log('here');
+                console.log('eleven');
                 console.log(matchList.data.stack);
             }
 
-            if (!matchList) return;
             if (matchList.totalGames !== 0) {
                 matchList.matches.forEach(function(matchListEntry) {
                     if (matchListEntry.platformId === 'NA1') {
@@ -94,12 +95,13 @@ function getPlayersFromMatches(visitedPlayers, newPlayers, matches) {
             return constants.MATCH_ENDPOINT + matchId + constants.MATCH_QUERY;
         },
         function handleMatch(match) {
+            if (!match) return;
+
             if (match.err) {
-                console.log('here');
+                console.log('twelve');
                 console.log(match.data.stack);
             }
 
-            if (!match) return;
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
                 if ( !(visitedPlayers.has(summonerId)) ) {
@@ -128,8 +130,8 @@ function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
             if (!playerLeagueMap) { return; }
 
             if (playerLeagueMap.err) {
-                console.log('here');
-                console.log(playerLeagueMap.err);
+                console.log('thirteen');
+                console.log(playerLeagueMap.data);
                 return;
             }
 
@@ -175,6 +177,8 @@ function compilePlayersToFile() {
     var visitedPlayers = new Set();
 
     var promiseChain = Promise.resolve(); // Start off the chain
+
+    outFile.write('[' + Array.from(constants.INITIAL_SEEDS).join());
 
     function iterateSearch() {
         console.log('visitedPlayers:', visitedPlayers.size, '- newPlayers:', newPlayers.size);

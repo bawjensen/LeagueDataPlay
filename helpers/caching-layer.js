@@ -26,24 +26,26 @@ function logErrorAndRethrow(err) {
     throw err;
 }
 
-function CachingLayer() {
+function CachingLayer(getFunc) {
+    this.get = getFunc;
 }
 
-CachingLayer.prototype.get = function(url) {
-    return new Promise(function(resolve, reject) {
-        request.get(url, function(err, resp, body) {
-            if (err) { reject(Error(err)); }
-            else { resolve({ data: body, id: url}); }
-        });
-    });
-}
+// CachingLayer.prototype.get = function(url) {
+//     console.log('four');
+//     return new Promise(function(resolve, reject) {
+//         request.get(url, function(err, resp, body) {
+//             if (err) { reject(Error(err)); }
+//             else { resolve({ resp: resp, data: body, id: url}); }
+//         });
+//     });
+// }
 
 CachingLayer.prototype.dbFetch = function(url) {
     let self = this;
     return new Promise(function(resolve, reject) {
         self.db.collection('data').find({ _id: url }).toArray(function(err, result) {
             if (err) { reject(err); }
-            else { resolve(result[0].data); }
+            else { resolve(result[0].body); }
         });
     });
 }
@@ -51,9 +53,9 @@ CachingLayer.prototype.dbFetch = function(url) {
 CachingLayer.prototype.dbStoreAndReturn = function(obj) {
     let self = this;
     return new Promise(function(resolve, reject) {
-        self.db.collection('data').insert({ _id: obj.id, data: obj.data }, function(err) {
+        self.db.collection('data').insert({ _id: obj.id, body: obj.body }, function(err) {
             if (err) { reject(err); }
-            else { resolve(obj.data); }
+            else { resolve(obj.body); }
         });
     });
 }
@@ -86,4 +88,4 @@ CachingLayer.prototype.end = function() {
     this.db.close();
 }
 
-module.exports = new CachingLayer;
+module.exports = CachingLayer;

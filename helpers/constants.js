@@ -26,7 +26,7 @@ module.exports = {
         51405,      // C9 Sneaky
         65399098    // TIP Rush
     ]),
-    MAX_REQUESTS: 1000,
+    MAX_REQUESTS: 100,
     // MAX_REQUESTS: 10,
     API_KEY: apiKey,
 

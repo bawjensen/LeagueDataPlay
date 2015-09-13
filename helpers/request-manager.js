@@ -30,7 +30,9 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
         let numOverloadedThreads = (numRequests % numThreads); // Number of threads that get n + 1 instead of n calls
         let threadSliceSize;
 
-        console.log('Handling', numRequests, 'over', numThreads, 'threads');
+        // let numCalls = 0;
+
+        // console.log('Handling', numRequests, 'over', numThreads, 'threads');
 
         let iter = iterable[Symbol.iterator]();
         let elem = iter.next();
@@ -53,8 +55,11 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
                 if (msg.type === 'rec') {
                     ++numReceived;
                     resultHandler(msg.data);
-                    process.stdout.write('\rReached: ' + numReceived + ' / ' + numRequests);
+                    process.stdout.write('\rReached: ' + numReceived + ' / ' + numRequests + ' (' + (numThreads - numFinished) + ' open)');
                 }
+                // else if (msg.type === 'req') {
+                //     ++numCalls;
+                // }
                 else if (msg.type === 'done') {
                     ++numFinished;
 

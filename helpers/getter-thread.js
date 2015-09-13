@@ -5,10 +5,18 @@ var request = require('request'),
 
 var threadNum;
 var cachingLayer;
+var sleepTime;
 
 function logErrorAndRethrow(err) {
     console.error(err.stack);
     throw err;
+}
+
+function sleep(time) {
+    if (time < 0) return Promise.resolve();
+    return new Promise(function(resolve, reject) {
+        setTimeout(resolve, time);
+    });
 }
 
 function finishUp() {
@@ -68,6 +76,8 @@ function getCallback(url, resolve, reject, err, resp, body) {
 function get(url) {
     return new Promise(function(resolve, reject) {
             request.get(url, getCallback.bind(undefined, url, resolve, reject));
+            // if (Math.random() < 0.1) { request.get(url, getCallback.bind(undefined, url, resolve, reject)); }
+            // else { getCallback(url, resolve, reject, null, { statusCode: 429, headers: { 'retry-after': 500 } }, null, null); }
         })
         .catch(function catchEndOfInputError(err) {
             if (err instanceof SyntaxError) {
@@ -91,39 +101,44 @@ function get(url) {
 function fetch(url) {
     var promise;
 
-    // if (Math.random() < 0.1) {
+    // if (Math.random() < 0.25) {
+    //     console.log('Actually sending request');
         promise = cachingLayer.fetch(url)
             .then(JSON.parse);
     // }
     // else {
-    //     promise = 
+    //     console.log('\rFake rate limit');
+    //     promise = new Promise(function(resolve, reject) {
+    //         getCallback(url, resolve, reject, null, { statusCode: 429, headers: { 'retry-after': 2000 } }, null, null);
+    //     });
     // }
 
     return promise;
 }
 
 function fetchAndSend(url) {
+    // process.send({ type: 'req' });
     return fetch(url)
-        .catch(function catchRateLimit(err) {
-            if (err.code === 429) {
-                sleepTime = err.time;
-                return promises.sleep(err.time)
-                    .then(promises.get.bind(null, err.url))
-                    .catch(catchRateLimit);
-            }
-            else {
-                console.log('Unknown error:', err.stack)
-                return { err: 'Unknown error', data: err.stack };
-            }
-        })
-        // .then(function(result) { results.push(result); })
         .then(function(result) {
             /*console.log(result); */
             try {
+                // console.log('\rSending "received" message');
                 process.send({ type: 'rec', data: result });
             }
             catch (err) {
                 finishUp();
+            }
+        })
+        .catch(function catchRateLimit(err) {
+            if (err.code === 429) {
+                // console.log('\rCaught rate limit');
+                sleepTime = (new Date).getTime() + err.time;
+                return sleep(err.time)
+                    .then(fetchAndSend.bind(undefined, err.url));
+            }
+            else {
+                console.log('Unknown error:', err.stack)
+                return { err: 'Unknown error', data: err.stack };
             }
         });
 }
@@ -144,12 +159,11 @@ process.on('message', function(obj) {
         let iter = iterable[Symbol.iterator]();
         let elem = iter.next();
         let results = [];
-        let sleepTime = false;
+        sleepTime = false;
 
         let rateLimitSleep = function() {
             if (sleepTime) {
-                console.log('Sleeping it!');
-                return promises.sleep(sleepTime)
+                return sleep(sleepTime - (new Date).getTime())
                     .then(function() { sleepTime = false });
             }
             else {

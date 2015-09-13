@@ -58,6 +58,7 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
                     process.stdout.write('\rReached: ' + numReceived + ' / ' + numRequests + ' (' + (numThreads - numFinished) + ' open)');
                 }
                 else if (msg.type === 'quit') {
+                    console.log('Got a 403, stopping everything immediately');
                     process.exit();
                 }
                 else if (msg.type === 'done') {

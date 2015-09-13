@@ -57,9 +57,9 @@ RequestManager.prototype.get = function(iterable, mapFunc, resultHandler) {
                     resultHandler(msg.data);
                     process.stdout.write('\rReached: ' + numReceived + ' / ' + numRequests + ' (' + (numThreads - numFinished) + ' open)');
                 }
-                // else if (msg.type === 'req') {
-                //     ++numCalls;
-                // }
+                else if (msg.type === 'quit') {
+                    process.exit();
+                }
                 else if (msg.type === 'done') {
                     ++numFinished;
 

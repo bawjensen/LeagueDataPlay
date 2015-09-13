@@ -67,6 +67,10 @@ function getCallback(url, resolve, reject, err, resp, body) {
                 // error.identifier = identifier;
                 reject(error);
                 break;
+            case 403:
+                process.send({ type: 'quit' });
+                process.exit();
+                break;
             default:
                 reject(Error('Unhandled resp statusCode: ' + resp.statusCode + '(' + url + ')'));
                 break;

@@ -4,7 +4,7 @@ var request = require('request'),
     CachingLayer = require('./caching-layer.js');
 
 var threadNum;
-var cachingLayer;
+// var cachingLayer;
 var sleepTime;
 
 function logErrorAndRethrow(err) {
@@ -21,7 +21,7 @@ function sleep(time) {
 
 function finishUp() {
     try {
-        cachingLayer.end();
+        // cachingLayer.end();
         process.send({ type: 'done' });
         // process.disconnect(); // Attempting to close children
     }
@@ -40,7 +40,7 @@ function getCallback(url, resolve, reject, err, resp, body) {
         switch(resp.statusCode) {
             case 200:
                 // console.log(body);
-                resolve({ body: body, id: url });
+                resolve(body);
                 break;
             case 429:
                 // console.error('Got rate limited');
@@ -103,7 +103,8 @@ function fetch(url) {
 
     // if (Math.random() < 0.25) {
     //     console.log('Actually sending request');
-        promise = cachingLayer.fetch(url)
+        // promise = cachingLayer.fetch(url)
+        promise = get(url)
             .then(JSON.parse);
     // }
     // else {
@@ -137,8 +138,10 @@ function fetchAndSend(url) {
                     .then(fetchAndSend.bind(undefined, err.url));
             }
             else {
-                console.log('Unknown error:', err.stack)
-                return { err: 'Unknown error', data: err.stack };
+                // console.log('Unknown error:', err.stack)
+                // return { err: 'Unknown error', data: err.stack };
+                // console.log(err.stack);
+                throw err;
             }
         });
 }
@@ -148,7 +151,7 @@ process.on('message', function(obj) {
     let iterable = obj.data;
     let maxRequests = obj.maxRequests;
 
-    cachingLayer = new CachingLayer(get);
+    // cachingLayer = new CachingLayer(get);
     
     threadNum = obj.num;
 

@@ -26,7 +26,8 @@ module.exports = {
         51405,      // C9 Sneaky
         65399098    // TIP Rush
     ]),
-    MAX_REQUESTS: 1000,
+    // MAX_REQUESTS: 1000,
+    MAX_REQUESTS: 10,
     API_KEY: apiKey,
 
     MATCHLIST_ENDPOINT:  'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/',

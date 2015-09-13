@@ -206,7 +206,7 @@ function compilePlayersToFile() {
 }
 
 function main() {
-    outFile = fs.createWriteStream('players.json');
+    outFile = fs.createWriteStream('json/players.json');
 
     var numThreads = Math.max(Math.floor(os.cpus().length * 0.75), 1);
 

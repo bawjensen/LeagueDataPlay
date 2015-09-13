@@ -136,7 +136,7 @@ function fetchAndSend(url) {
         })
         .catch(function catchRateLimit(err) {
             if (err.code === 429) {
-                // console.log('\rCaught rate limit');
+                console.log('\rWe\'re being rate limited, boys!');
                 sleepTime = (new Date).getTime() + err.time;
                 return sleep(err.time)
                     .then(fetchAndSend.bind(undefined, err.url));

@@ -2,7 +2,7 @@
 
 var querystring = require('querystring');
 
-var apiKey = process.env.BAS_RIOT_KEY;
+var apiKey = process.env.RIOT_CHALLENGE_KEY;
 
 // var weekAgo = (new Date).getTime() - 604800000; // One week in milliseconds
 var weekAgo = 1441950745000 - 604800000; // One week in milliseconds
@@ -26,8 +26,8 @@ module.exports = {
         51405,      // C9 Sneaky
         65399098    // TIP Rush
     ]),
-    // MAX_REQUESTS: 1000,
-    MAX_REQUESTS: 10,
+    MAX_REQUESTS: 1000,
+    // MAX_REQUESTS: 10,
     API_KEY: apiKey,
 
     MATCHLIST_ENDPOINT:  'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/',

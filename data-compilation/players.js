@@ -1,146 +1,153 @@
-'use strict';
-
-var constants       = require('../helpers/constants.js'),
-    fs              = require('fs'),
-    RequestManager  = require('../helpers/request-manager.js'),
-    os              = require('os');
+var fs          = require('fs'),
+    promises    = require('../helpers/promised.js'),
+    Queue       = require('../helpers/queue.js'),
+    querystring = require('querystring');
 
 // --------------------------------------- Global Variables -------------------------------------
 
-var requestManager;
-var outFile;
+var NOW             = (new Date).getTime();
+var WEEK_AGO        = NOW - 604800000; // One week in milliseconds
+var MATCHES_DESIRED = 100000;
+
+// console.log('Time threshold of a week ago:', WEEK_AGO);
+
+var API_KEY         = process.env.RIOT_KEY;
+var DEFAULT_RATE_LIMIT = 100;
+var RATE_LIMIT      = process.argv[2] ? parseInt(process.argv[2]) : DEFAULT_RATE_LIMIT;
+var INITIAL_SEEDS   = [
+    51405           // C9 Sneaky
+    // 492066,         // C9 Hai
+    // 47585509        // CyclicSpec
+];
+
+var matchListEndpoint   = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/';
+var matchEndpoint       = 'https://na.api.pvp.net/api/lol/na/v2.2/match/';
+var leagueEndpoint      = 'https://na.api.pvp.net/api/lol/na/v2.5/league/by-summoner/'
+
+var matchListOptions = {
+    'rankedQueues': 'RANKED_SOLO_5x5',
+    'seasons': 'SEASON2015',
+    'beginTime': WEEK_AGO,
+    'api_key': API_KEY
+};
+var matchOptions = {
+    'includeTimeline': 'false',
+    'api_key': API_KEY
+}
+var leagueOptions = {
+    'api_key': API_KEY
+}
+
+var matchListQuery  = '?' + querystring.stringify(matchListOptions);
+var matchQuery      = '?' + querystring.stringify(matchOptions);
+var leagueQuery     = '?' + querystring.stringify(leagueOptions);
 
 // --------------------------------------- Helper Functions -------------------------------------
-
-function logErrorAndRethrow(err) {
-    console.error(err.stack);
-    throw err;
-}
-
-function finishUp() {
-    var minutes = ((new Date).getTime() - start) / 60000;
-    console.log('Took:', minutes, 'minutes');
-    outFile.write(']');
-    outFile.close();
-}
-
-function partition(array, groupSize) {
-    var groupedArray = [];
-
-    var tempGroup = [];
-    for (let summonerId of array) {
-        tempGroup.push(summonerId);
-
-        if (tempGroup.length >= groupSize) {
-            groupedArray.push(tempGroup);
-            tempGroup = [];
-        }
-    }
-    if (tempGroup.length) {
-        groupedArray.push(tempGroup);
-    }
-
-    return groupedArray;
-}
 
 var tierChecker = new Set(['CHALLENGER', 'MASTER', 'DIAMOND', 'PLATINUM']);
 function highEnoughTier(tier) {
     return tierChecker.has(tier);
 }
 
-// --------------------------------------- Primary Functions ------------------------------------
+function logErrorAndRethrow(err) {
+    console.log(err.stack);
+    throw err;
+}
+function logAndIgnore404(err) {
+    if (err.http_code === 404) {
+        console.log('\rIgnoring:', err.message);
+    }
+    else {
+        logErrorAndRethrow(err);
+    }
+}
 
-function getMatchesFromPlayers(currentPlayers, visitedMatches) {
-    console.log('Getting matches for', currentPlayers.size, 'players');
+// --------------------------------------- Main Functions ---------------------------------------
 
-    if (!currentPlayers.size) return Promise.resolve();
-
+function getMatchesFromPlayers(players) {
+    console.log('Getting matches for', players.size, 'players');
     var matches = new Set();
 
-    return requestManager.get(currentPlayers,
+    return promises.rateLimitedGet(players, RATE_LIMIT,
         function mapPlayer(summonerId) {
-            return constants.MATCHLIST_ENDPOINT + summonerId + constants.MATCHLIST_QUERY;
+            return promises.persistentGet(matchListEndpoint + summonerId + matchListQuery);
         },
         function handleMatchList(matchList) {
             if (!matchList) return;
-
-            if (matchList.err) {
-                console.log('eleven');
-                console.log(matchList.data.stack);
-            }
-
-            if (matchList.totalGames !== 0) {
+            if (matchList.totalGames != 0) {
                 matchList.matches.forEach(function(matchListEntry) {
                     if (matchListEntry.platformId === 'NA1') {
-                        let matchId = parseInt(matchListEntry.matchId);
-                        if (!visitedMatches.has(matchId)) {
-                            matches.add(matchId);
-                        }
+                        matches.add(parseInt(matchListEntry.matchId));
                     }
                 });
             }
-        })
+        },
+        logAndIgnore404)
         .then(function() {
             return matches;
         });
-}
+    }
 
-function getPlayersFromMatches(visitedPlayers, newPlayers, matches) {
+function getPlayersFromMatches(visited, newPlayers, matches) {
     console.log('Getting players for', matches.size, 'matches');
 
-    if (!matches.size) return Promise.resolve();
-
-    return requestManager.get(matches,
+    return promises.rateLimitedGet(matches, RATE_LIMIT,
         function mapMatch(matchId) {
-            return constants.MATCH_ENDPOINT + matchId + constants.MATCH_QUERY;
+            return promises.persistentGet(matchEndpoint + matchId + matchQuery);
         },
         function handleMatch(match) {
             if (!match) return;
-
-            if (match.err) {
-                console.log('twelve');
-                console.log(match.data.stack);
-            }
-
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
-                if ( !(visitedPlayers.has(summonerId)) ) {
+                if ( !(visited.has(summonerId)) ) {
                     newPlayers.add(summonerId); // Add so they're returned as result
-                    visitedPlayers.add(summonerId);
+                    visited.add(summonerId);
                 }
             });
-        });
-}
-
-function expandPlayersFromMatches(currentPlayers, newPlayers, visitedPlayers, visitedMatches) {
-    return getMatchesFromPlayers(currentPlayers, visitedMatches)
-        .then(getPlayersFromMatches.bind(null, visitedPlayers, newPlayers));
-}
-
-function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
-    console.log('Getting leagues for', currentPlayers.size, 'players');
-
-    if (!currentPlayers.size) return Promise.resolve();
-
-    return requestManager.get(partition(currentPlayers, 10),
-        function mapPlayer(summonerIdList) {
-            return constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY;
         },
-        function handleLeague(playerLeagueMap) {
-            if (!playerLeagueMap) { return; }
+        logAndIgnore404);
+}
 
-            if (playerLeagueMap.err) {
-                console.log('thirteen');
-                console.log(playerLeagueMap.data);
-                return;
-            }
+function expandPlayersFromMatches(visited, newPlayers, players) {
+    return getMatchesFromPlayers(players)
+        .then(getPlayersFromMatches.bind(null, visited, newPlayers));
+}
+
+function expandPlayersFromLeagues(visited, newPlayers, players) {
+    console.log('Getting leagues for', players.size, 'players');
+
+    var groupedPlayers = [];
+
+    let i = 0;
+    var summonerGroup = [];
+    for (let summonerId of players) {
+        summonerGroup.push(summonerId);
+        ++i;
+
+        if (i >= 10) {
+            groupedPlayers.push(summonerGroup);
+            summonerGroup = [];
+            i = 0;
+        }
+    }
+    groupedPlayers.push(summonerGroup);
+
+    return promises.rateLimitedGet(groupedPlayers, RATE_LIMIT,
+        function mapPlayer(summonerIdList) {
+            return promises.persistentGet(leagueEndpoint + summonerIdList.join() + leagueQuery, summonerIdList);
+        },
+        function handleLeague(objectResult) {
+            if (!objectResult) return;
+
+            var playerLeagueMap = objectResult.data;
+            var summonerIdList = objectResult.id;
 
             // Object.keys(playerLeagueMap).forEach(function(summonerId) {
-            Object.keys(playerLeagueMap).forEach(function(summonerId) {
-                var leagueDtoList = playerLeagueMap[summonerId];
+            summonerIdList.forEach(function(summonerId) {
+                var leagueDtoList = playerLeagueMap['' + summonerId];
 
                 if (!leagueDtoList) { // If the summoner wasn't in the returned league, they are unranked/unplaced
-                    currentPlayers.delete(parseInt(summonerId));
+                    players.delete(summonerId);
                     return;
                 }
 
@@ -150,73 +157,82 @@ function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
                             leagueDto.entries.forEach(function(leagueDtoEntry) {
                                 let newSummonerId = parseInt(leagueDtoEntry.playerOrTeamId);
 
-                                if ( !(visitedPlayers.has(newSummonerId)) ) {
+                                if ( !(visited.has(newSummonerId)) ) {
                                     newPlayers.add(newSummonerId);
-                                    visitedPlayers.add(newSummonerId);
+                                    visited.add(newSummonerId);
                                 }
                             });
                         }
                         else { // Summoner was too low tier to be considered
-                            currentPlayers.delete(parseInt(summonerId));
+                            players.delete(summonerId);
                         }
                     }
                 });
             });
-        });
+        },
+        function catchBadRequests(err) {
+            if (err.http_code === 404) {
+                console.log('\rGot a full list of 404, removing all ids from players');
+                let offenders = err.identifier;
+
+                for (let summonerId of offenders) {
+                    players.delete(summonerId)
+                }
+            }
+            else {
+                throw err;
+            }
+        }).catch(logErrorAndRethrow);
 }
 
-function expandPlayers(currentPlayers, newPlayers, visitedPlayers, visitedMatches) {
-    return expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers)
-        .then(expandPlayersFromMatches.bind(undefined, currentPlayers, newPlayers, visitedPlayers, visitedMatches));
+function expandPlayers(visited, newPlayers, players) {
+    return expandPlayersFromLeagues(visited, newPlayers, players)
+        .then(expandPlayersFromMatches.bind(null, visited, newPlayers, players));
 }
 
-function compilePlayersToFile() {
-    var newPlayers = constants.INITIAL_SEEDS;
-    var currentPlayers = new Set();
-    var visitedMatches = new Set();
-    var visitedPlayers = new Set();
+function compilePlayers() {
+    var outFile     = fs.createWriteStream('visited.json');
+    var players     = new Set(INITIAL_SEEDS);
+    var visited     = new Set();
+    var newPlayers  = new Set();
 
-    var promiseChain = Promise.resolve(); // Start off the chain
+    if (RATE_LIMIT !== DEFAULT_RATE_LIMIT) console.log('Rate limiting to:', RATE_LIMIT);
 
-    outFile.write('[' + Array.from(constants.INITIAL_SEEDS).join());
+    outFile.write('[' + INITIAL_SEEDS.join());
 
-    function iterateSearch() {
-        console.log('visitedPlayers:', visitedPlayers.size, '- newPlayers:', newPlayers.size);
+    var promiseChain = Promise.resolve();
 
-        if (newPlayers.size) { // Done when no new currentPlayers
-            currentPlayers = new Set(newPlayers);
-            newPlayers.clear();
+    function loop(initialRun) {
+        if (!initialRun)
+            players.forEach(function(summonerId) { outFile.write(',' + summonerId); });
+        console.log('visited: ', visited.size);
+        console.log('players: ', players.size);
 
+        if (players.size) {
             promiseChain = promiseChain
-                .then(expandPlayers.bind(undefined, currentPlayers, newPlayers, visitedPlayers, visitedMatches))
+                .then(expandPlayers.bind(null, visited, newPlayers, players))
                 .then(function() {
-                    newPlayers.forEach(function(summonerId) { outFile.write(',' + summonerId); });
+                    players = new Set(newPlayers);
+                    newPlayers.clear();
                 })
-                .then(iterateSearch)
-                .catch(logErrorAndRethrow);
+                .then(loop);
         }
         else {
-            promiseChain.then(finishUp).catch(logErrorAndRethrow);
+            outFile.write(']')
+            promiseChain = promiseChain
+                .then(function() {
+                    var end = (new Date).getTime();
+                    var minutes = (end - start) / 60000;
+                    console.log('Took:', minutes, 'minutes');
+                })
         }
     }
 
-    iterateSearch();
+    loop(true);
 
     return promiseChain;
 }
 
-function main() {
-    outFile = fs.createWriteStream('json/players.json');
-
-    var numThreads = Math.max(Math.floor(os.cpus().length * 0.75), 1);
-
-    requestManager = new RequestManager(numThreads, constants.MAX_REQUESTS);
-
-    return compilePlayersToFile();
-}
-
-var start = (new Date).getTime();
-main()
-    .catch(function(err) {
-        console.log(err.stack || err);
-    });
+var start = NOW;
+compilePlayers()
+    .catch(logErrorAndRethrow);

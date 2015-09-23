@@ -1,3 +1,5 @@
+'use strict';
+
 function Node(value) {
     this.cargo = value;
     this.next = null;

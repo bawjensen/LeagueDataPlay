@@ -19,5 +19,9 @@
   "dependencies": {
     "mongodb": "^2.0.42",
     "request": "^2.60.0"
+  },
+  "jshintConfig": {
+    "node": true,
+    "esnext": true
   }
 }

@@ -9,6 +9,7 @@ var constants       = require('../helpers/constants.js'),
 
 var requestManager;
 var outFile;
+var start;
 
 // --------------------------------------- Helper Functions -------------------------------------
 
@@ -18,7 +19,7 @@ function logErrorAndRethrow(err) {
 }
 
 function finishUp() {
-    var minutes = ((new Date).getTime() - start) / 60000;
+    var minutes = (new Date().getTime() - start) / 60000;
     console.log('Took:', minutes, 'minutes');
     outFile.write(']');
     outFile.close();
@@ -64,11 +65,6 @@ function getMatchesFromPlayers(currentPlayers, visitedMatches) {
         function handleMatchList(matchList) {
             if (!matchList) return;
 
-            if (matchList.err) {
-                console.log('eleven');
-                console.log(matchList.data.stack);
-            }
-
             if (matchList.totalGames !== 0) {
                 matchList.matches.forEach(function(matchListEntry) {
                     if (matchListEntry.platformId === 'NA1') {
@@ -97,11 +93,6 @@ function getPlayersFromMatches(visitedPlayers, newPlayers, matches) {
         function handleMatch(match) {
             if (!match) return;
 
-            if (match.err) {
-                console.log('twelve');
-                console.log(match.data.stack);
-            }
-
             match.participantIdentities.forEach(function(pIdentity) {
                 var summonerId = parseInt(pIdentity.player.summonerId);
                 if ( !(visitedPlayers.has(summonerId)) ) {
@@ -117,6 +108,38 @@ function expandPlayersFromMatches(currentPlayers, newPlayers, visitedPlayers, vi
         .then(getPlayersFromMatches.bind(null, visitedPlayers, newPlayers));
 }
 
+function handleLeague(playerLeagueMap) {
+    if (!playerLeagueMap) { return; }
+
+    // Object.keys(playerLeagueMap).forEach(function(summonerId) {
+    Object.keys(playerLeagueMap).forEach(function(summonerId) {
+        var leagueDtoList = playerLeagueMap[summonerId];
+
+        if (!leagueDtoList) { // If the summoner wasn't in the returned league, they are unranked/unplaced
+            currentPlayers.delete(parseInt(summonerId));
+            return;
+        }
+
+        leagueDtoList.forEach(function(leagueDto) {
+            if (leagueDto.queue === 'RANKED_SOLO_5x5') {
+                if (highEnoughTier(leagueDto.tier)) {
+                    leagueDto.entries.forEach(function(leagueDtoEntry) {
+                        let newSummonerId = parseInt(leagueDtoEntry.playerOrTeamId);
+
+                        if ( !(visitedPlayers.has(newSummonerId)) ) {
+                            newPlayers.add(newSummonerId);
+                            visitedPlayers.add(newSummonerId);
+                        }
+                    });
+                }
+                else { // Summoner was too low tier to be considered
+                    currentPlayers.delete(parseInt(summonerId));
+                }
+            }
+        });
+    });
+}
+
 function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
     console.log('Getting leagues for', currentPlayers.size, 'players');
 
@@ -125,44 +148,7 @@ function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
     return requestManager.get(partition(currentPlayers, 10),
         function mapPlayer(summonerIdList) {
             return constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY;
-        },
-        function handleLeague(playerLeagueMap) {
-            if (!playerLeagueMap) { return; }
-
-            if (playerLeagueMap.err) {
-                console.log('thirteen');
-                console.log(playerLeagueMap.data);
-                return;
-            }
-
-            // Object.keys(playerLeagueMap).forEach(function(summonerId) {
-            Object.keys(playerLeagueMap).forEach(function(summonerId) {
-                var leagueDtoList = playerLeagueMap[summonerId];
-
-                if (!leagueDtoList) { // If the summoner wasn't in the returned league, they are unranked/unplaced
-                    currentPlayers.delete(parseInt(summonerId));
-                    return;
-                }
-
-                leagueDtoList.forEach(function(leagueDto) {
-                    if (leagueDto.queue === 'RANKED_SOLO_5x5') {
-                        if (highEnoughTier(leagueDto.tier)) {
-                            leagueDto.entries.forEach(function(leagueDtoEntry) {
-                                let newSummonerId = parseInt(leagueDtoEntry.playerOrTeamId);
-
-                                if ( !(visitedPlayers.has(newSummonerId)) ) {
-                                    newPlayers.add(newSummonerId);
-                                    visitedPlayers.add(newSummonerId);
-                                }
-                            });
-                        }
-                        else { // Summoner was too low tier to be considered
-                            currentPlayers.delete(parseInt(summonerId));
-                        }
-                    }
-                });
-            });
-        });
+        }, handleLeague);
 }
 
 function expandPlayers(currentPlayers, newPlayers, visitedPlayers, visitedMatches) {
@@ -215,7 +201,7 @@ function main() {
     return compilePlayersToFile();
 }
 
-var start = (new Date).getTime();
+start = new Date().getTime();
 main()
     .catch(function(err) {
         console.log(err.stack || err);

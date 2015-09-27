@@ -7,6 +7,16 @@ var threadNum;
 // var cachingLayer;
 var sleepTime;
 
+function rateLimitSleep() {
+    if (sleepTime) {
+        return sleep(sleepTime - new Date().getTime())
+            .then(function() { sleepTime = false; });
+    }
+    else {
+        return Promise.resolve();
+    }
+}
+
 function logErrorAndRethrow(err) {
     console.error(err.stack);
     throw err;
@@ -137,7 +147,7 @@ function fetchAndSend(url) {
         .catch(function catchRateLimit(err) {
             if (err.code === 429) {
                 console.log('\rWe\'re being rate limited, boys!');
-                sleepTime = (new Date).getTime() + err.time;
+                sleepTime = new Date().getTime() + err.time;
                 return sleep(err.time)
                     .then(fetchAndSend.bind(undefined, err.url));
             }
@@ -167,16 +177,6 @@ process.on('message', function(obj) {
         let elem = iter.next();
         let results = [];
         sleepTime = false;
-
-        let rateLimitSleep = function() {
-            if (sleepTime) {
-                return sleep(sleepTime - (new Date).getTime())
-                    .then(function() { sleepTime = false });
-            }
-            else {
-                return Promise.resolve();
-            }
-        }
 
         let handleResponseAndSendNext = function() {
             --numActive;

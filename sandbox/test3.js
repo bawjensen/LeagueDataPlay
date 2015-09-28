@@ -2,6 +2,10 @@
 
 console.log('Loaded test3.js');
 
+function deserializeFunction(funcStr) {
+    return new Function('return ' + funcStr)();
+}
+
 function insertDependencies(dependencies) {
     for (var key in dependencies) {
         GLOBAL[key] = dependencies[key];
@@ -9,10 +13,13 @@ function insertDependencies(dependencies) {
 }
 
 function handleMapping(inputs, mapper) {
-    for (let input of inputs) {
-        console.log(constants.MATCHLIST_ENDPOINT + input + constants.MATCHLIST_QUERY);
-    }
-    // console.log(constants.)
+    return new Promise(function(resolve, reject) {
+        for (let input of inputs) {
+            mapper(input);
+        }
+
+        resolve();
+    });
 }
 
 process.on('message', function(msg) {
@@ -21,7 +28,7 @@ process.on('message', function(msg) {
             insertDependencies(msg.value);
             break;
         case 'map': // map input to output
-            handleMapping(msg.inputs, msg.mapper);
+            handleMapping(msg.inputs, deserializeFunction(msg.mapper)).then(process.send.bind(undefined, { type: 'done' }));
             break;
         default:
             console.log('Message not understood:', msg);

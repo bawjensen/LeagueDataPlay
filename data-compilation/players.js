@@ -157,38 +157,40 @@ function expandPlayers(currentPlayers, newPlayers, visitedPlayers, visitedMatche
 }
 
 function compilePlayersToFile() {
-    var newPlayers = constants.INITIAL_SEEDS;
-    var currentPlayers = new Set();
-    var visitedMatches = new Set();
-    var visitedPlayers = new Set();
+    return new Promise(function(resolve, reject) {
+        var newPlayers = constants.INITIAL_SEEDS;
+        var currentPlayers = new Set();
+        var visitedMatches = new Set();
+        var visitedPlayers = new Set();
 
-    var promiseChain = Promise.resolve(); // Start off the chain
+        var promiseChain = Promise.resolve(); // Start off the chain
 
-    outFile.write('[' + Array.from(constants.INITIAL_SEEDS).join());
+        outFile.write('[' + Array.from(constants.INITIAL_SEEDS).join());
 
-    function iterateSearch() {
-        console.log('visitedPlayers:', visitedPlayers.size, '- newPlayers:', newPlayers.size);
+        function iterateSearch() {
+            console.log('visitedPlayers:', visitedPlayers.size, '- newPlayers:', newPlayers.size);
 
-        if (newPlayers.size) { // Done when no new currentPlayers
-            currentPlayers = new Set(newPlayers);
-            newPlayers.clear();
+            if (newPlayers.size) { // Done when no new currentPlayers
+                currentPlayers = new Set(newPlayers);
+                newPlayers.clear();
 
-            promiseChain = promiseChain
-                .then(expandPlayers.bind(undefined, currentPlayers, newPlayers, visitedPlayers, visitedMatches))
-                .then(function() {
-                    newPlayers.forEach(function(summonerId) { outFile.write(',' + summonerId); });
-                })
-                .then(iterateSearch)
-                .catch(logErrorAndRethrow);
+                promiseChain = promiseChain
+                    .then(expandPlayers.bind(undefined, currentPlayers, newPlayers, visitedPlayers, visitedMatches))
+                    .then(function() {
+                        newPlayers.forEach(function(summonerId) { outFile.write(',' + summonerId); });
+                    })
+                    .then(iterateSearch)
+                    .catch(logErrorAndRethrow);
+            }
+            else {
+                promiseChain.then(resolve).catch(logErrorAndRethrow);
+            }
         }
-        else {
-            promiseChain.then(finishUp).catch(logErrorAndRethrow);
-        }
-    }
 
-    iterateSearch();
+        iterateSearch();
 
-    return promiseChain;
+        return promiseChain;
+    });
 }
 
 function main() {
@@ -203,6 +205,7 @@ function main() {
 
 start = new Date().getTime();
 main()
+    .then(finishUp)
     .catch(function(err) {
         console.log(err.stack || err);
     });

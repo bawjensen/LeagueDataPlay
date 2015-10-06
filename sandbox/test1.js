@@ -53,8 +53,78 @@ function highEnoughTier(tier) {
     return tierChecker.has(tier);
 }
 
-function createMapper(idToUrlMapper, respToSetMapper) {
-    // return request.get(idToUrlMapper)
+
+
+function getCallback(url, resolve, reject, err, resp, body) {
+    if (err) {
+        reject(err);
+    }
+    else {
+        switch(resp.statusCode) {
+            case 200:
+                // console.log(body);
+                resolve(body);
+                break;
+            case 429:
+                // console.error('Got rate limited');
+                // setTimeout(function() {
+                //     request.get(url, getCallback.bind(null, url, identifier, resolve, reject));
+                // }, parseInt(resp.headers['retry-after']));
+                var rateLimitError = new Error('Rate limit from Riot\'s API');
+                rateLimitError.code = resp.statusCode;
+                rateLimitError.time = parseInt(resp.headers['retry-after']);
+                rateLimitError.url = url;
+                reject(rateLimitError);
+                break;
+            case 500:
+            case 503:
+            case 504:
+                // console.error('Got', resp.statusCode, 'code, retrying in 0.5 sec (', url, ')');
+                setTimeout(function() {
+                    request.get(url, getCallback.bind(null, url, resolve, reject));
+                }, 500);
+                break;
+            case 404:
+                let error = new Error('Resp code was 404: ' + url);
+                error.http_code = 404;
+                // error.identifier = identifier;
+                reject(error);
+                break;
+            case 403:
+                process.send({ type: 'quit' });
+                process.exit();
+                break;
+            default:
+                reject(Error('Unhandled resp statusCode: ' + resp.statusCode + '(' + url + ')'));
+                break;
+        }
+    }
+}
+function get(url) {
+    return new Promise(function(resolve, reject) {
+            request.get(url, getCallback.bind(undefined, url, resolve, reject));
+            // if (Math.random() < 0.1) { request.get(url, getCallback.bind(undefined, url, resolve, reject)); }
+            // else { getCallback(url, resolve, reject, null, { statusCode: 429, headers: { 'retry-after': 500 } }, null, null); }
+        })
+        .catch(function catchEndOfInputError(err) {
+            if (err instanceof SyntaxError) {
+                console.log('\rIgnoring:', url, err);
+            }
+            else {
+                throw err;
+            }
+        })
+        .catch(function(err) {
+            if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+                console.error('\rIssue with:', url, '\n', err);
+                // return get(url);
+            }
+            throw err;
+        });
+}
+
+function createMapper(idToUrlMapper, respToIdsMapper) {
+    return get(idToUrlMapper).then(respToIdsMapper);
 }
 
 // --------------------------------------- Primary Behavior Functions ---------------------------
@@ -116,36 +186,24 @@ function expandPlayersFromMatches(currentPlayers, newPlayers, visitedPlayers, vi
         .then(getPlayersFromMatches.bind(null, visitedPlayers, newPlayers));
 }
 
-function handleLeague(playerLeagueMap) {
+function idListToUrlMapper(summonerIdList){
+    return constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY;
+    // console.log(constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY);
+}
+
+function leagueToIdsMapper(playerLeagueMap) {
     if (!playerLeagueMap) { return; }
+
+    var ids = [];
 
     // Object.keys(playerLeagueMap).forEach(function(summonerId) {
     Object.keys(playerLeagueMap).forEach(function(summonerId) {
-        var leagueDtoList = playerLeagueMap[summonerId];
+        summonerId = parseInt(summonerId);
 
-        if (!leagueDtoList) { // If the summoner wasn't in the returned league, they are unranked/unplaced
-            currentPlayers.delete(parseInt(summonerId));
-            return;
-        }
-
-        leagueDtoList.forEach(function(leagueDto) {
-            if (leagueDto.queue === 'RANKED_SOLO_5x5') {
-                if (highEnoughTier(leagueDto.tier)) {
-                    leagueDto.entries.forEach(function(leagueDtoEntry) {
-                        let newSummonerId = parseInt(leagueDtoEntry.playerOrTeamId);
-
-                        if ( !(visitedPlayers.has(newSummonerId)) ) {
-                            newPlayers.add(newSummonerId);
-                            visitedPlayers.add(newSummonerId);
-                        }
-                    });
-                }
-                else { // Summoner was too low tier to be considered
-                    currentPlayers.delete(parseInt(summonerId));
-                }
-            }
-        });
+        ids.push(summonerId);
     });
+
+    return ids;
 }
 
 function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
@@ -153,11 +211,13 @@ function expandPlayersFromLeagues(currentPlayers, newPlayers, visitedPlayers) {
 
     if (!currentPlayers.size) return Promise.resolve();
 
-    return requestManager.get(partition(currentPlayers, 10),
-        function mapPlayer(summonerIdList) {
-            return constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY;
-            // console.log(constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY);
-        }, handleLeague);
+    return requestManager.get(partition(currentPlayers, 10), createMapper(idListToUrlMapper, leagueToIdsMapper));
+
+    // return requestManager.get(partition(currentPlayers, 10),
+    //     function mapPlayer(summonerIdList) {
+    //         return constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY;
+    //         // console.log(constants.LEAGUE_ENDPOINT + summonerIdList.join() + constants.LEAGUE_QUERY);
+    //     }, handleLeague);
 }
 
 function expandPlayers(currentPlayers, newPlayers, visitedPlayers, visitedMatches) {

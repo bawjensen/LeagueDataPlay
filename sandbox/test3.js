@@ -3,6 +3,7 @@
 console.log('Loaded test3.js');
 
 function deserializeFunction(funcStr) {
+    console.log('funcStr', funcStr);
     return new Function('return ' + funcStr)();
 }
 
@@ -28,7 +29,9 @@ process.on('message', function(msg) {
             insertDependencies(msg.value);
             break;
         case 'map': // map input to output
-            handleMapping(msg.inputs, deserializeFunction(msg.mapper)).then(process.send.bind(undefined, { type: 'done' }));
+            handleMapping(msg.inputs, deserializeFunction(msg.mapper)).then(function(ids) {
+                process.send({ type: 'done', result: ids })
+            });
             break;
         default:
             console.log('Message not understood:', msg);

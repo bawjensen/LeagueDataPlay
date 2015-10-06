@@ -28,6 +28,7 @@ class RequestManager {
             var handleWorkerMessage = function(msg) {
                 switch (msg.type) {
                     case 'done':
+                        console.log(msg.result);
                         --numActive;
                         break;
                     default:

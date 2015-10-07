@@ -1,101 +1,138 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"math/rand"
+	// "math/rand"
+	// "sync"
+	. "github.com/bawjensen/dataplay/utility"
+	. "github.com/bawjensen/dataplay/constants"
 )
 
-type IntSet struct {
-	set map[int]bool
-}
+func partition(set IntSet, num int) [][]int {
+	setSize := set.Size()
+	sliceSize := setSize / num
+	numOverloadedSlices := setSize % num
 
-func NewIntSet() IntSet {
-	return IntSet{make(map[int]bool)}
-}
+	slices := make([][]int, num, num)
 
-func (set IntSet) String() string {
-	var buffer bytes.Buffer
-	buffer.WriteString("[ ")
-	for key := range set.set {
-		buffer.WriteString(fmt.Sprint(key, " "))
-	}
-	buffer.WriteString("]")
-	return buffer.String()
-}
+	iterator := set.Values()
 
-func (set *IntSet) Add(i int) {
-	set.set[i] = true
-}
-
-func (set *IntSet) Union(other *IntSet) {
-	for key := range other.set {
-		set.Add(key)
-	}
-}
-
-func (set *IntSet) Size() int {
-	return len(set.set)
-}
-
-func getViaMatches(ch chan IntSet) {
-	maxNumPerMatch := 10
-
-	for {
-		input := <- ch
-
-		output := NewIntSet()
-
-		for _ = range input.set {
-			for i := 0; i < maxNumPerMatch; i++ {
-				output.Add(rand.Intn(100))
-			}
+	for i := 0; i < num; i++ {
+		numInSlice := sliceSize
+		if i < numOverloadedSlices {
+			numInSlice += 1
 		}
 
-		ch <- output
-	}
-}
+		slice := make([]int, numInSlice, numInSlice)
 
-func getViaLeague(ch chan IntSet) {
-	maxNumPerLeague := 100
-
-	for {
-		input := <- ch
-
-		fmt.Printf("Input: %v\n", input)
-		// maxExpected := maxNumPerLeague * len(input)
-		// ouput := make([]int, 0, maxExpected)
-		output := NewIntSet()
-
-		for _ = range input.set {
-			for i := 0; i < maxNumPerLeague; i++ {
-				output.Add(rand.Intn(100))
-			}
+		for j := 0; j < numInSlice; j++ {
+			slice[j] = <-iterator
 		}
 
-		ch <- output
+		slices[i] = slice
 	}
+
+	return slices
+}
+
+func createSliceHandler(mapper func(int) IntSet) (in chan []int, out chan IntSet)  {
+	in = make(chan []int)
+	out = make(chan IntSet)
+
+	go func() {
+		for {
+			input := <-in
+
+			superSet := NewIntSet()
+
+			for _, value := range input {
+				set := mapper(value)
+				superSet.Union(&set)
+			}
+
+			out <- superSet
+		}
+	}()
+
+	return in, out
+}
+
+func createSearchHandler(mapper func(int) IntSet) (inChan, outChan chan IntSet) {
+	inChan, outChan = make(chan IntSet), make(chan IntSet)
+
+	subInChans := make([]chan []int, NUM_INTERMEDIATES, NUM_INTERMEDIATES)
+	subOutChans := make([]chan IntSet, NUM_INTERMEDIATES, NUM_INTERMEDIATES)
+
+	for i := 0; i < NUM_INTERMEDIATES; i++ {
+		subInChans[i], subOutChans[i] = createSliceHandler(mapper)
+	}
+
+	go func() {
+		for {
+			input := <-inChan
+			slices := partition(input, NUM_INTERMEDIATES)
+			output := NewIntSet()
+
+			for i := 0; i < NUM_INTERMEDIATES; i++ {
+				go func(i int) {
+					subInChans[i] <- slices[i]
+				}(i)
+			}
+
+			for i := 0; i < NUM_INTERMEDIATES; i++ {
+				results := <-subOutChans[i]
+				output.Union(&results)
+			}
+
+			outChan <- output
+		}
+	}()
+
+	return inChan, outChan
+}
+
+func createSearchIterator() (inChan, outChan chan IntSet) {
+	inChan, outChan = make(chan IntSet), make(chan IntSet)
+
+	go func() {
+		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague)
+		matchIn, matchOut := createSearchHandler(SearchPlayerMatch)
+
+		for {
+			input := <-inChan
+
+			leagueIn <- input
+			matchIn <- input
+
+			outputLeague := <-leagueOut
+			outputMatch := <-matchOut
+
+			outputLeague.Union(&outputMatch)
+
+			outChan <- outputLeague
+		}
+	}()
+
+	return
 }
 
 func main() {
-	leagueChan := make(chan IntSet)
-	matchesChan := make(chan IntSet)
-	go getViaLeague(leagueChan)
-	go getViaMatches(matchesChan)
+	// in, out := createSearchHandler(SearchPlayerLeague)
+	in, out := createSearchIterator()
 
 	initialSeeds := NewIntSet()
-	initialSeeds.Add(0)
+	// initialSeeds.Add(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+	initialSeeds.Add(0, 1)
 
-	leagueChan <- initialSeeds
-	matchesChan <- initialSeeds
+	// fmt.Println("initialSeeds:", initialSeeds)
+	in <- initialSeeds
+	// <-out
+	results := <-out
 
-	result1 := <- leagueChan
-	result2 := <- matchesChan
+	fmt.Println("results:", results)
+	
+	in <- results
+	results = <-out
 
-	result := NewIntSet()
-	result.Union(&result1)
-	result.Union(&result2)
-
-	// fmt.Printf("Result: %d %d %v %v\n", result1.Size(), result2.Size(), result1, result2)
-	fmt.Printf("Result: %d %v\n", result.Size(), result)
+	fmt.Println("results:", results)
 }

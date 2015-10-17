@@ -18,37 +18,59 @@ func NewIntSet(initElems ...int) (set IntSet) {
 	return 
 }
 
-func (set IntSet) String() string {
+func NewIntSetFromSlice(initElems []interface{}) (set IntSet) {
+	set = IntSet{make(map[int]bool)}
+	for _, elem := range initElems {
+		set.set[elem.(int)] = true
+	}
+	return 
+}
+
+func (self IntSet) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("IntSet [ ")
-	for key := range set.Values() {
-		buffer.WriteString(fmt.Sprint(key, " "))
+	for elem := range self.Values() {
+		buffer.WriteString(fmt.Sprint(elem, " "))
 	}
 	buffer.WriteString("]")
 	return buffer.String()
 }
 
-func (set *IntSet) Add(elems ...int) {
+func (self *IntSet) Add(elems ...int) {
 	for _, elem := range elems {
-		set.set[elem] = true
+		self.set[elem] = true
 	}
 }
 
-func (set *IntSet) Union(other *IntSet) {
-	for key := range other.Values() {
-		set.Add(key)
+func (self *IntSet) Has(elem int) bool {
+	return self.set[elem]
+}
+
+func (self *IntSet) Union(other *IntSet) {
+	for elem := range other.Values() {
+		self.Add(elem)
 	}
 }
 
-func (set *IntSet) Size() int {
-	return len(set.set)
+func (self *IntSet) UnionWithout(other *IntSet, exclude *IntSet) {
+	for elem := range other.Values() {
+		if !exclude.Has(elem) {
+			self.Add(elem)
+		} /*else {
+			fmt.Printf("Not adding %d because it was visited\n", elem)
+		}*/
+	}
 }
 
-func (set *IntSet) Values() chan int {
+func (self *IntSet) Size() int {
+	return len(self.set)
+}
+
+func (self *IntSet) Values() chan int {
 	c := make(chan int)
 
 	go func() {
-		for value := range set.set {
+		for value := range self.set {
 			c <- value
 		}
 

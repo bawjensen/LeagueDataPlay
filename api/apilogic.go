@@ -175,7 +175,7 @@ func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
 
 	for _ = range matchlistData.Matches {
 		results := <-ch
-		fmt.Println("Got:", results)
+		// fmt.Println("Got:", results)
 		expandedPlayers.Union(&results)
 	}
 	

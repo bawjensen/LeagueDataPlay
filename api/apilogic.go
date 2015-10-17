@@ -136,7 +136,7 @@ func InputPrepperMatch(players IntSet) (sliced []interface{}) {
 	for value := range players.Values() {
 		sliced = append(sliced, value)
 	}
-	return
+	return sliced
 }
 
 func createMatchUrl(match int64) string {
@@ -175,11 +175,12 @@ func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
 
 	for _ = range matchlistData.Matches {
 		results := <-ch
-		fmt.Printf("Got %d from matches\n", results.Size())
 		expandedPlayers.Union(&results)
 	}
+
+	fmt.Printf("Got %d from matches\n", expandedPlayers.Size())
 	
-	return
+	return expandedPlayers
 }
 
 // ------------------------------------ League logic -----------------------------------
@@ -210,7 +211,7 @@ func InputPrepperLeague(players IntSet) (sliced []interface{}) {
 	// Leftover
 	sliced[i] = slice
 
-	return
+	return sliced
 }
 
 func createLeagueUrl(players []int) string {
@@ -243,9 +244,9 @@ func SearchPlayerLeague(iPlayers interface{}) (expandedPlayers IntSet) {
 		}
 	}
 
-	fmt.Printf("Got %d from league", expandedPlayers.Size())
+	fmt.Printf("Got %d from league\n", expandedPlayers.Size())
 
-	return
+	return expandedPlayers
 }
 
 func RandomSummonerId() int {

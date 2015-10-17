@@ -2,16 +2,19 @@ package api
 
 import(
 	"encoding/json"
+	"errors"
 	"fmt"
 	// "io/ioutil"
 	"log"
 	"math"
 	"math/rand"
+	"net"
 	"net/http"
+	"net/url"
 	// "reflect"
 	"strconv"
 	"strings"
-	// "time"
+	"time"
 
 	"github.com/bawjensen/dataplay/ratethrottle"
 
@@ -106,27 +109,67 @@ type LeagueDto struct {
 	Tier				string
 }
 
+type timeoutError interface {
+	Timeout() bool
+}
+
 // ------------------------------------ General logic ----------------------------------
 
-func getJson(url string, data interface{}) {
+func getJson(urlString string, data interface{}) (err error) {
 	ratethrottle.Wait()
-	// fmt.Println("Sending a request:", url)
-	// resp, err := http.Get(url)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatal(err)
+
+	var resp *http.Response
+	gotResp := false
+	for !gotResp {
+		// fmt.Println("Sending a request:", urlString)
+		resp, err = http.Get(urlString)
+		// req, err := http.NewRequest("GET", urlString, nil)
+		if err != nil {
+			fmt.Println("Got an error, checking if timeout")
+			switch err := err.(type) {
+			case *url.Error:
+				if err, ok := err.Err.(net.Error); ok && err.Timeout() {
+					fmt.Println("Was timeout")
+				}
+			case net.Error:
+				if err.Timeout() {
+					fmt.Println("Was timeout")
+				}
+			default:
+				fmt.Println("Wasn't timeout, time to fatal log")
+				log.Fatal(err)
+			}
+		} else {
+			// req.Header.Add("Connection", "close")
+			// resp, err := client.Do(req)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			defer resp.Body.Close()
+			// if (resp.StatusCode != 200) {
+			// 	log.Fatal(http.StatusText(resp.StatusCode))
+			// }
+
+			switch resp.StatusCode {
+			case 200:
+				gotResp = true
+			case 429:
+				fmt.Println("Type", resp.Header["X-Rate-Limit-Type"])
+				fmt.Println("Sleeping for", resp.Header["Retry-After"][0])
+				sleep, _ := strconv.Atoi(resp.Header["Retry-After"][0])
+				time.Sleep(time.Duration(sleep))
+			case 404:
+				fmt.Println("Issue with:", urlString)
+				err = errors.New(fmt.Sprintf("Issue with: %s", urlString))
+				gotResp = true
+			}
+		}
 	}
-	req.Header.Add("Connection", "close")
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if (resp.StatusCode != 200) {
-		log.Fatal(http.StatusText(resp.StatusCode))
-	}
+
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
+
+	return err
 }
 
 // ------------------------------------ Match logic ------------------------------------

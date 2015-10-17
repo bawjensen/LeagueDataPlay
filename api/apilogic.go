@@ -19,6 +19,11 @@ import(
 	// . "github.com/bawjensen/dataplay/constants"
 )
 
+// ------------------------------------ Globals ----------------------------------------
+
+// client := &http.Client{}
+var client http.Client
+
 // ------------------------------------ API response types -----------------------------
 
 type MatchlistResponse struct {
@@ -105,12 +110,21 @@ type LeagueDto struct {
 
 func getJson(url string, data interface{}) {
 	ratethrottle.Wait()
-	fmt.Println("Sending a request:", url)
-	resp, err := http.Get(url)
+	// fmt.Println("Sending a request:", url)
+	// resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// req.Header.Add("Connection", "close")
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
+	if (resp.StatusCode != 200) {
+		log.Fatal(http.StatusText(resp.StatusCode))
+	}
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
 }

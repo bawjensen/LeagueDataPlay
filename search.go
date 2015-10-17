@@ -155,6 +155,7 @@ func search() {
 	initialSeeds := NewIntSet()
 	// initialSeeds.Add(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 	// initialSeeds.Add(0, 1, 2, 3)
+	initialSeeds.Add(51405)
 	initialSeeds.Add(10077)
 
 	// fmt.Println("initialSeeds:", initialSeeds)
@@ -165,16 +166,16 @@ func search() {
 
 	for newPlayers.Size() > 0 {
 	// for newPlayers.Size() < 100 {
-		fmt.Printf("visited (%d)\n", visited.Size())
-		fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
+		// fmt.Printf("visited (%d)\n", visited.Size())
+		// fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
 
 		start = time.Now()
 
 		in <- newPlayers
 		newPlayers = <-out
 
-		// fmt.Printf("visited (%d): %v\n", visited.Size(), visited)
-		// fmt.Printf("newPlayers (%d): %v\n", newPlayers.Size(), newPlayers)
+		fmt.Printf("visited (%d)\n", visited.Size())
+		fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
 
 		fmt.Printf("Iteration: %v\n\n", time.Since(start))
 	}

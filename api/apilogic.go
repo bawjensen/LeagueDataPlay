@@ -116,7 +116,7 @@ func getJson(url string, data interface{}) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// req.Header.Add("Connection", "close")
+	req.Header.Add("Connection", "close")
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)

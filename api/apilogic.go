@@ -154,10 +154,11 @@ func getJson(urlString string, data interface{}) (err error) {
 			case 200:
 				gotResp = true
 			case 429:
-				fmt.Println("Type", resp.Header["X-Rate-Limit-Type"])
-				fmt.Println("Sleeping for", resp.Header["Retry-After"][0])
-				sleep, _ := strconv.Atoi(resp.Header["Retry-After"][0])
-				time.Sleep(time.Duration(sleep))
+				// fmt.Println("Type", resp.Header["X-Rate-Limit-Type"])
+				// fmt.Println("Sleeping for", resp.Header["Retry-After"][0])
+				// sleep, _ := strconv.Atoi(resp.Header["Retry-After"][0])
+				fmt.Println("Headers:", resp.Header)
+				time.Sleep(time.Duration(100))
 			case 404:
 				fmt.Println("Issue with:", urlString)
 				err = errors.New(fmt.Sprintf("Issue with: %s", urlString))

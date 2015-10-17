@@ -23,6 +23,14 @@ func (self *ringBuffer) increment() {
     self.curr = (self.curr + 1) % self.size
 }
 
+func (self *ringBuffer) current() time.Time {
+    return self.ring[self.curr]
+}
+
+func (self *ringBuffer) setCurrent(newTime time.Time) {
+    self.ring[self.curr] = newTime
+}
+
 type RateThrottle struct {
     buffer ringBuffer
     wait chan bool
@@ -36,16 +44,16 @@ func init() {
     }
 
     instance = new(RateThrottle)
-    (*instance) = NewRateThrottle()
+    (*instance) = newRateThrottle()
 
     go func() {
         for {
             instance.wait <- true
 
-            instance.buffer.ring[instance.buffer.curr] = time.Now()
+            instance.buffer.setCurrent(time.Now())
             instance.buffer.increment()
 
-            lastTime := instance.buffer.ring[instance.buffer.curr]
+            lastTime := instance.buffer.current()
             if timeSince := time.Since(lastTime); (!lastTime.IsZero()) && (timeSince < instance.buffer.period) {
                 // fmt.Printf("At %v, time is %v, sleeping for %v\n", instance.buffer.curr, instance.buffer.ring[instance.buffer.curr].Second(), instance.buffer.period - timeSince)
                 time.Sleep(instance.buffer.period - timeSince)
@@ -54,7 +62,7 @@ func init() {
     }()
 }
 
-func NewRateThrottle() (self RateThrottle) {
+func newRateThrottle() (self RateThrottle) {
     self = RateThrottle{buffer: newRingBuffer(REQUEST_CAP, REQUEST_PERIOD * time.Second), wait: make(chan bool)}
     return
 }

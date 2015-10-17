@@ -19,7 +19,7 @@ const (
 	DESIRED_QUEUE = "RANKED_SOLO_5x5"
 
 	// Determined by API
-	REQUEST_CAP = 3000 // requests
+	REQUEST_CAP = 2500 // requests
 	REQUEST_PERIOD = 10 // seconds
 	PLAYERS_PER_LEAGUE_CALL = 10
 )

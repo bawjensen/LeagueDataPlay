@@ -192,7 +192,8 @@ func main() {
 	defer un(trace())
 	rand.Seed( time.Now().UTC().UnixNano())
 
-	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(0))
+	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(0))
+	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU()))
 
 	search()
 }

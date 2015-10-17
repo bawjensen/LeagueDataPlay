@@ -6,7 +6,8 @@ import(
 	// "io/ioutil"
 	// "net/http"
 
-	. "github.com/bawjensen/dataplay/api"
+	// . "github.com/bawjensen/dataplay/api"
+	. "github.com/bawjensen/dataplay/utility"
 	// . "github.com/bawjensen/dataplay/constants"
 )
 
@@ -29,7 +30,7 @@ func main() {
 	// fmt.Println("matchData:", matchData)
 
 
-	fmt.Println("results:", SearchPlayerMatch(10077))
+	// fmt.Println("results:", SearchPlayerMatch(10077))
 
 
 	// var leagueData LeagueResponse
@@ -42,6 +43,8 @@ func main() {
 
 
 	// fmt.Println("results:", SearchPlayerLeague([]int{10077}))
+
+	fmt.Println(MATCH_BEGIN_TIME)
 }
 
 // package main

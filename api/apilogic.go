@@ -2,7 +2,7 @@ package api
 
 import(
 	"encoding/json"
-	// "fmt"
+	"fmt"
 	// "io/ioutil"
 	"log"
 	"math"
@@ -144,7 +144,7 @@ func createMatchUrl(match int64) string {
 }
 
 func createMatchlistUrl(player int) string {
-	return MATCHLIST_PREFIX + strconv.Itoa(player) + "?beginTime=" + WEEK_AGO + "&api_key=" + API_KEY
+	return MATCHLIST_PREFIX + strconv.Itoa(player) + "?beginTime=" + MATCH_BEGIN_TIME + "&api_key=" + API_KEY
 }
 
 func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
@@ -175,7 +175,7 @@ func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
 
 	for _ = range matchlistData.Matches {
 		results := <-ch
-		// fmt.Println("Got:", results)
+		fmt.Printf("Got %d from matches\n", results.Size())
 		expandedPlayers.Union(&results)
 	}
 	
@@ -242,6 +242,8 @@ func SearchPlayerLeague(iPlayers interface{}) (expandedPlayers IntSet) {
 			}
 		}
 	}
+
+	fmt.Printf("Got %d from league", expandedPlayers.Size())
 
 	return
 }

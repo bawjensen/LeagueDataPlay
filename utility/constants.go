@@ -2,6 +2,8 @@ package utility
 
 import(
 	"os"
+	"strconv"
+	"time"
 )
 
 const (
@@ -22,10 +24,13 @@ const (
 	REQUEST_CAP = 2500 // requests
 	REQUEST_PERIOD = 10 // seconds
 	PLAYERS_PER_LEAGUE_CALL = 10
+	ONE_DAY = 		24 * 60 * 60
+	ONE_WEEK =  7 * 24 * 60 * 60
 )
 
 var (
 	// Pseudo-Constants
 	API_KEY = os.Getenv("BAS_RIOT_KEY")
-	WEEK_AGO = "1443653132000" // Hard-coded for now, computed later
+	// WEEK_AGO = "1443653132000" // Hard-coded for now, computed later
+	MATCH_BEGIN_TIME = strconv.FormatInt((time.Now().Unix() - ONE_DAY) * 1000, 10)
 )

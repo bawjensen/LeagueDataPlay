@@ -42,6 +42,7 @@ func init() {
     if instance != nil {
         fmt.Println("instance wasn't nil - How is this possible?")
     }
+    fmt.Println("Initializing rate throttler")
 
     instance = new(RateThrottle)
     (*instance) = newRateThrottle()

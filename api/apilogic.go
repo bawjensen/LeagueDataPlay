@@ -224,7 +224,7 @@ func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
 		expandedPlayers.Union(&results)
 	}
 
-	fmt.Printf("Got %d from matches\n", expandedPlayers.Size())
+	fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
 	
 	return expandedPlayers
 }

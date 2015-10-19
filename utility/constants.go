@@ -11,10 +11,8 @@ const (
 	NUM_SEARCHES = 2 // Leagues and Matches
 
 	// Configurable
-	NUM_INTERMEDIATES = 5
-	MAX_NUM_PER_LEAGUE = 100
-	MAX_NUM_PER_MATCH = 10
-	RATE_THROTTLE_GRANULARITY = 5.0
+	NUM_INTERMEDIATES = 5 // Number of workers per searching section (e.g. league/match)
+	RATE_THROTTLE_GRANULARITY = 10.0 // Divide both time and requests by this value when throttling
 
 	MATCHLIST_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/"
 	MATCH_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/match/"

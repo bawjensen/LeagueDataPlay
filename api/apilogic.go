@@ -177,7 +177,7 @@ func getJson(urlString string, data interface{}) (err error) {
 
 // ------------------------------------ Match logic ------------------------------------
 
-func InputPrepperMatch(players IntSet) (sliced []interface{}) {
+func InputPrepperMatch(players *IntSet) (sliced []interface{}) {
 	sliced = make([]interface{}, 0, players.Size())
 	for value := range players.Values() {
 		sliced = append(sliced, value)
@@ -189,12 +189,12 @@ func createMatchUrl(match int64) string {
 	return MATCH_PREFIX + strconv.FormatInt(match, 10) + "?api_key=" + API_KEY
 }
 
-func createMatchlistUrl(player int) string {
-	return MATCHLIST_PREFIX + strconv.Itoa(player) + "?beginTime=" + MATCH_BEGIN_TIME + "&api_key=" + API_KEY
+func createMatchlistUrl(player int64) string {
+	return MATCHLIST_PREFIX + strconv.FormatInt(player, 10) + "?beginTime=" + MATCH_BEGIN_TIME + "&api_key=" + API_KEY
 }
 
-func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
-	player := iPlayer.(int)
+func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPlayers *IntSet) {
+	player := iPlayer.(int64)
 
 	expandedPlayers = NewIntSet()
 
@@ -202,26 +202,30 @@ func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
 	matchlistUrl := createMatchlistUrl(player)
 	getJson(matchlistUrl, &matchlistData)
 
-	var matchData MatchResponse
-	ch := make(chan IntSet)
+	ch := make(chan *IntSet)
 	for _, match := range matchlistData.Matches {
-		matchUrl := createMatchUrl(match.MatchId)
-		go func(url string) {
-			getJson(url, &matchData)
-
+		go func(matchId int64) {
 			newIds := NewIntSet()
 
-			for _, participant := range matchData.ParticipantIdentities {
-				newIds.Add(int(participant.Player.SummonerId)) // TODO: Do I need to handle int64?
+			if (!visited[MATCHES].Has(matchId)) {
+				var matchData MatchResponse
+				matchUrl := createMatchUrl(matchId)
+				getJson(matchUrl, &matchData)
+
+				for _, participant := range matchData.ParticipantIdentities {
+					if !visited[PLAYERS].Has(participant.Player.SummonerId) {
+						newIds.Add(participant.Player.SummonerId)
+					}
+				}
 			}
 
 			ch <- newIds
-		}(matchUrl)
+		}(match.MatchId)
 	}
 
 	for _ = range matchlistData.Matches {
 		results := <-ch
-		expandedPlayers.Union(&results)
+		expandedPlayers.Union(results)
 	}
 
 	fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
@@ -231,13 +235,13 @@ func SearchPlayerMatch(iPlayer interface{}) (expandedPlayers IntSet) {
 
 // ------------------------------------ League logic -----------------------------------
 
-func InputPrepperLeague(players IntSet) (sliced []interface{}) {
+func InputPrepperLeague(players *IntSet) (sliced []interface{}) {
 	numSlices := int(math.Ceil(float64(players.Size()) / float64(PLAYERS_PER_LEAGUE_CALL)))
 	sliced = make([]interface{}, numSlices, numSlices)
 
 	i := 0
 	j := 0
-	var slice []int
+	var slice []int64
 	for value := range players.Values() {
 		if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, insert and continue
 			sliced[i] = slice
@@ -246,7 +250,7 @@ func InputPrepperLeague(players IntSet) (sliced []interface{}) {
 		}
 
 		if j == 0 { // Starting new slices
-			slice = make([]int, 0, PLAYERS_PER_LEAGUE_CALL)
+			slice = make([]int64, 0, PLAYERS_PER_LEAGUE_CALL)
 		}
 
 		// slice[j] = value
@@ -260,18 +264,18 @@ func InputPrepperLeague(players IntSet) (sliced []interface{}) {
 	return sliced
 }
 
-func createLeagueUrl(players []int) string {
+func createLeagueUrl(players []int64) string {
 	stringPlayers := make([]string, len(players), len(players))
 
 	for i, id := range players {
-		stringPlayers[i] = strconv.Itoa(id)
+		stringPlayers[i] = strconv.FormatInt(id, 10)
 	}
 
 	return LEAGUE_PREFIX + strings.Join(stringPlayers, ",") + "?api_key=" + API_KEY
 }
 
-func SearchPlayerLeague(iPlayers interface{}) (expandedPlayers IntSet) {
-	players := iPlayers.([]int)
+func SearchPlayerLeague(iPlayers interface{}, visited map[int]*IntSet) (expandedPlayers *IntSet) {
+	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse
 
@@ -283,8 +287,10 @@ func SearchPlayerLeague(iPlayers interface{}) (expandedPlayers IntSet) {
 		for _, leagueDto := range leagueData[playerId] {
 			if leagueDto.Queue == DESIRED_QUEUE {
 				for _, entry := range leagueDto.Entries {
-					id, _ := strconv.Atoi(entry.PlayerOrTeamId)
-					expandedPlayers.Add(id)
+					id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
+					if !visited[PLAYERS].Has(id) {
+						expandedPlayers.Add(id)
+					}
 				}
 			}
 		}

@@ -11,6 +11,10 @@ import(
 	// . "github.com/bawjensen/dataplay/constants"
 )
 
+func test(m map[int]*IntSet) {
+	m[LEAGUES].Add(2)
+}
+
 func main() {
 	// var matchlistData MatchlistResponse
 	// matchlistUrl := "https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/10077?beginTime=1443653132000&api_key=c595ebc0-f6d2-4cdc-98d0-85bbbebff054"
@@ -44,7 +48,18 @@ func main() {
 
 	// fmt.Println("results:", SearchPlayerLeague([]int{10077}))
 
-	fmt.Println(MATCH_BEGIN_TIME)
+	// fmt.Println(MATCH_BEGIN_TIME)
+
+	m := make(map[int]*IntSet)
+	s := NewIntSet()
+
+	m[LEAGUES] = s
+
+	s.Add(1)
+
+	test(m)
+
+	fmt.Println(m)
 }
 
 // package main

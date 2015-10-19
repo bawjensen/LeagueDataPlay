@@ -7,26 +7,26 @@ import (
 )
 
 type IntSet struct {
-	set map[int]bool
+	set map[int64]bool
 }
 
-func NewIntSet(initElems ...int) (set IntSet) {
-	set = IntSet{make(map[int]bool)}
+func NewIntSet(initElems ...int64) (set *IntSet) {
+	set = &IntSet{make(map[int64]bool)}
 	for _, elem := range initElems {
 		set.set[elem] = true
 	}
-	return 
+	return set
 }
 
-func NewIntSetFromSlice(initElems []interface{}) (set IntSet) {
-	set = IntSet{make(map[int]bool)}
+func NewIntSetFromSlice(initElems []interface{}) (set *IntSet) {
+	set = &IntSet{make(map[int64]bool)}
 	for _, elem := range initElems {
-		set.set[elem.(int)] = true
+		set.set[elem.(int64)] = true
 	}
-	return 
+	return set
 }
 
-func (self IntSet) String() string {
+func (self *IntSet) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("IntSet [ ")
 	for elem := range self.Values() {
@@ -36,13 +36,13 @@ func (self IntSet) String() string {
 	return buffer.String()
 }
 
-func (self *IntSet) Add(elems ...int) {
+func (self *IntSet) Add(elems ...int64) {
 	for _, elem := range elems {
 		self.set[elem] = true
 	}
 }
 
-func (self *IntSet) Has(elem int) bool {
+func (self *IntSet) Has(elem int64) bool {
 	return self.set[elem]
 }
 
@@ -66,8 +66,8 @@ func (self *IntSet) Size() int {
 	return len(self.set)
 }
 
-func (self *IntSet) Values() chan int {
-	c := make(chan int)
+func (self *IntSet) Values() chan int64 {
+	c := make(chan int64)
 
 	go func() {
 		for value := range self.set {

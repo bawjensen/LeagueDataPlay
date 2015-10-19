@@ -51,41 +51,41 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 	return slices
 }
 
-func createSliceHandler(mapper func(interface{}) IntSet, in chan []interface{}, out chan IntSet, visited IntSet) {
+func createSliceHandler(mapper func(interface{}, map[int]*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited map[int]*IntSet) {
 	go func() {
 		for {
 			input := <-in
 
-			superSet := NewIntSet()
-			subOut := make(chan IntSet)
+			midLevelSet := NewIntSet()
+			subOut := make(chan *IntSet)
 
 			for _, value := range input {
 				go func(value interface{}) {
-					subOut <- mapper(value)
+					subOut <- mapper(value, visited)
 				}(value)
 			}
 
 			for _ = range input {
 				results := <-subOut
-				superSet.UnionWithout(&results, &visited)
+				midLevelSet.UnionWithout(results, visited[PLAYERS])
 			}
 
-			out <- superSet
+			out <- midLevelSet
 		}
 	}()
 }
 
-func createSliceHandlers(num int, mapper func(interface{}) IntSet, subInChan chan []interface{}, subOutChan chan IntSet, visited IntSet) {
+func createSliceHandlers(num int, mapper func(interface{}, map[int]*IntSet) *IntSet, subInChan chan []interface{}, subOutChan chan *IntSet, visited map[int]*IntSet) {
 	for i := 0; i < num; i++ {
 		createSliceHandler(mapper, subInChan, subOutChan, visited)
 	}
 }
 
-func createSearchHandler(mapper func(interface{}) IntSet, prepper func(IntSet) []interface{}, visited IntSet) (inChan, outChan chan IntSet) {
-	inChan, outChan = make(chan IntSet), make(chan IntSet)
+func createSearchHandler(mapper func(interface{}, map[int]*IntSet) *IntSet, prepper func(*IntSet) []interface{}, visited map[int]*IntSet) (inChan, outChan chan *IntSet) {
+	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
 	subInChan := make(chan []interface{}) // Every request funneled into one 'please' channel
-	subOutChan := make(chan IntSet) // Every response funneled into one 'finished' channel
+	subOutChan := make(chan *IntSet) // Every response funneled into one 'finished' channel
 
 	createSliceHandlers(NUM_INTERMEDIATES, mapper, subInChan, subOutChan, visited)
 
@@ -94,7 +94,7 @@ func createSearchHandler(mapper func(interface{}) IntSet, prepper func(IntSet) [
 			input := <-inChan
 			slices := partitionByNum(prepper(input), NUM_INTERMEDIATES)
 			// slices := partitionBySize(input, 3)
-			output := NewIntSet()
+			superSet := NewIntSet()
 
 			// fmt.Println("slices:", slices)
 
@@ -106,19 +106,22 @@ func createSearchHandler(mapper func(interface{}) IntSet, prepper func(IntSet) [
 
 			for _ = range slices {
 				results := <-subOutChan
-				output.Union(&results)
+				superSet.Union(results)
 			}
 
-			outChan <- output
+			outChan <- superSet
 		}
 	}()
 
 	return inChan, outChan
 }
 
-func createSearchIterator() (inChan, outChan chan IntSet, visited IntSet) {
-	inChan, outChan = make(chan IntSet), make(chan IntSet)
-	visited = NewIntSet()
+func createSearchIterator() (inChan, outChan chan *IntSet, visited map[int]*IntSet) {
+	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
+
+	visited = make(map[int]*IntSet)
+	visited[MATCHES] = NewIntSet()
+	visited[PLAYERS] = NewIntSet()
 
 	go func() {
 		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
@@ -131,7 +134,7 @@ func createSearchIterator() (inChan, outChan chan IntSet, visited IntSet) {
 			matchIn <- input
 
 			for value := range input.Values() {
-				visited.Add(value)
+				visited[PLAYERS].Add(value)
 			}
 
 			outputLeague := <-leagueOut
@@ -140,13 +143,13 @@ func createSearchIterator() (inChan, outChan chan IntSet, visited IntSet) {
 			// fmt.Println("outputLeague:", outputLeague)
 			// fmt.Println("outputMatch:", outputMatch)
 
-			outputLeague.Union(&outputMatch)
+			outputLeague.Union(outputMatch)
 
 			outChan <- outputLeague
 		}
 	}()
 
-	return
+	return inChan, outChan, visited
 }
 
 func search() {
@@ -174,7 +177,7 @@ func search() {
 		in <- newPlayers
 		newPlayers = <-out
 
-		fmt.Printf("visited (%d)\n", visited.Size())
+		fmt.Printf("visited (%d)\n", visited[PLAYERS].Size())
 		fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
 
 		fmt.Printf("Iteration: %v\n\n", time.Since(start))

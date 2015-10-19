@@ -29,6 +29,13 @@ const (
 	ONE_WEEK =  7 * 24 * 60 * 60
 )
 
+// Used, for the moment, solely in the visited map
+const (
+	LEAGUES = iota
+	MATCHES
+	PLAYERS
+)
+
 var (
 	// Pseudo-Constants
 	API_KEY = os.Getenv("BAS_RIOT_KEY")

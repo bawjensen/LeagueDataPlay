@@ -125,7 +125,7 @@ func getJson(urlString string, data interface{}) (err error) {
 		resp, err = http.Get(urlString)
 		// req, err := http.NewRequest("GET", urlString, nil)
 		if err != nil {
-			fmt.Printf("Got an error, checking if timeout... ")
+			fmt.Println("Got an error, checking if timeout... ")
 			switch err := err.(type) {
 			case *url.Error:
 				if err, ok := err.Err.(net.Error); ok && err.Timeout() {

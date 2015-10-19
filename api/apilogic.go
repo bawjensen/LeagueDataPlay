@@ -152,7 +152,7 @@ func getJson(urlString string, data interface{}) (err error) {
 			case 200:
 				gotResp = true
 			case 429:
-				fmt.Println(resp.StatusCode, "- :", urlString)
+				fmt.Println(resp.StatusCode, "-", urlString)
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
 					fmt.Println(resp.StatusCode, "for", urlString)
@@ -162,7 +162,7 @@ func getJson(urlString string, data interface{}) (err error) {
 					// time.Sleep(time.Duration(sleep))
 				}
 			case 404:
-				fmt.Println(resp.StatusCode, "- :", urlString)
+				fmt.Println(resp.StatusCode, "-", urlString)
 				err = errors.New(fmt.Sprintf("Issue with: %s", urlString))
 				gotResp = true
 			}

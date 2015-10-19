@@ -1,16 +1,26 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	// "math"
 	"math/rand"
+	"os"
 	"runtime"
+	"runtime/pprof"
 	// "sync"
 	"time"
 	. "github.com/bawjensen/dataplay/api"
 	. "github.com/bawjensen/dataplay/utility"
 	// . "github.com/bawjensen/dataplay/constants"
 )
+
+// ------------------------------------ Global variables -------------------------------------------
+
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
+// ------------------------------------ Search logic -----------------------------------------------
 
 func MakeIterator(slice []interface{}) chan interface{} {
 	ch := make(chan interface{})
@@ -185,19 +195,29 @@ func search() {
 	}
 }
 
-func trace() time.Time {
-    return time.Now()
-}
-func un(startTime time.Time) {
-    fmt.Println("Total elapsedTime:", time.Since(startTime))
-}
+// func trace() time.Time {
+//     return time.Now()
+// }
+// func un(startTime time.Time) {
+//     fmt.Println("Total elapsedTime:", time.Since(startTime))
+// }
+
 
 func main() {
-	defer un(trace())
+    flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            log.Fatal(err)
+        }
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+    }
+
+	// defer un(trace())
 	rand.Seed( time.Now().UTC().UnixNano())
 
-	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(0))
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU()))
 	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(0))
 
 	search()

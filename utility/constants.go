@@ -25,6 +25,7 @@ const (
 	REQUEST_PERIOD = 10 // seconds
 
 	PLAYERS_PER_LEAGUE_CALL = 10
+	ONE_HOUR = 			 60 * 60
 	ONE_DAY = 		24 * 60 * 60
 	ONE_WEEK =  7 * 24 * 60 * 60
 )

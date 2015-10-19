@@ -131,14 +131,12 @@ func init() {
 // ------------------------------------ General logic ----------------------------------
 
 func getJson(urlString string, data interface{}) (err error) {
-	ratethrottle.Wait()
-
 	var resp *http.Response
 	gotResp := false
 	for !gotResp {
-		// fmt.Println("Sending a request:", urlString)
+		ratethrottle.Wait()
+		
 		resp, err = http.Get(urlString)
-		// req, err := http.NewRequest("GET", urlString, nil)
 		if err != nil {
 			fmt.Println("Got an error, checking if timeout... ")
 			switch err := err.(type) {
@@ -167,7 +165,6 @@ func getJson(urlString string, data interface{}) (err error) {
 			case 200:
 				gotResp = true
 			case 429:
-				// fmt.Println(resp.StatusCode, "-", urlString)
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
 					fmt.Println(resp.StatusCode, "for", urlString)
@@ -186,7 +183,7 @@ func getJson(urlString string, data interface{}) (err error) {
 
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
-	
+
 	requestReportChan <- true
 
 	return err

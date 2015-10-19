@@ -155,7 +155,7 @@ func getJson(urlString string, data interface{}) (err error) {
 				gotResp = true
 			case 429:
 				// fmt.Println("Type", resp.Header["X-Rate-Limit-Type"])
-				fmt.Println(resp.StatusCode)
+				fmt.Println(resp.StatusCode, "for", urlString)
 				log.Fatal(resp.Header)
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {

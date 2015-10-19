@@ -26,6 +26,7 @@ import(
 
 // client := &http.Client{}
 var client http.Client
+var requestReportChan chan bool
 
 // ------------------------------------ API response types -----------------------------
 
@@ -113,10 +114,25 @@ type timeoutError interface {
 	Timeout() bool
 }
 
+// ------------------------------------ Helper logic -----------------------------------
+
+func init() {
+	requestReportChan = make(chan bool)
+	go func() {
+		curr := 0
+		for {
+			<-requestReportChan
+			fmt.Printf("\rCurrently at %d requests\r", curr)
+			curr++
+		}
+	}()
+}
+
 // ------------------------------------ General logic ----------------------------------
 
 func getJson(urlString string, data interface{}) (err error) {
 	ratethrottle.Wait()
+	requestReportChan <- true
 
 	var resp *http.Response
 	gotResp := false

@@ -132,7 +132,6 @@ func init() {
 
 func getJson(urlString string, data interface{}) (err error) {
 	ratethrottle.Wait()
-	requestReportChan <- true
 
 	var resp *http.Response
 	gotResp := false
@@ -187,6 +186,8 @@ func getJson(urlString string, data interface{}) (err error) {
 
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
+	
+	requestReportChan <- true
 
 	return err
 }

@@ -65,7 +65,7 @@ func init() {
 
 func newRateThrottle() (self RateThrottle) {
     // Increase the time of the rate throttle by 1.1, to account for small issues with rate limiting
-    self = RateThrottle{buffer: newRingBuffer(REQUEST_CAP, 1.1 * REQUEST_PERIOD * time.Second), wait: make(chan bool)}
+    self = RateThrottle{buffer: newRingBuffer(REQUEST_CAP / RATE_THROTTLE_GRANULARITY, (REQUEST_PERIOD * time.Second) / RATE_THROTTLE_GRANULARITY), wait: make(chan bool)}
     return
 }
 

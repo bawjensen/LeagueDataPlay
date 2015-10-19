@@ -14,6 +14,7 @@ const (
 	NUM_INTERMEDIATES = 5
 	MAX_NUM_PER_LEAGUE = 100
 	MAX_NUM_PER_MATCH = 10
+	RATE_THROTTLE_GRANULARITY = 5.0
 
 	MATCHLIST_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/"
 	MATCH_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/match/"
@@ -22,8 +23,8 @@ const (
 
 	// Determined by API
 	REQUEST_CAP = 3000 // requests
-	// REQUEST_CAP = 300 // requests
 	REQUEST_PERIOD = 10 // seconds
+
 	PLAYERS_PER_LEAGUE_CALL = 10
 	ONE_DAY = 		24 * 60 * 60
 	ONE_WEEK =  7 * 24 * 60 * 60

@@ -130,16 +130,14 @@ func getJson(urlString string, data interface{}) (err error) {
 			case *url.Error:
 				if err, ok := err.Err.(net.Error); ok && err.Timeout() {
 					fmt.Println("was timeout")
-				}
-				else {
+				} else {
 					fmt.Println("wasn't timeout, time to fatal log")
 					log.Fatal(err)
 				}
 			case net.Error:
 				if err.Timeout() {
 					fmt.Println("was timeout")
-				}
-				else {
+				} else {
 					fmt.Println("wasn't timeout, time to fatal log")
 					log.Fatal(err)
 				}

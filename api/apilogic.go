@@ -140,15 +140,7 @@ func getJson(urlString string, data interface{}) (err error) {
 				log.Fatal(err)
 			}
 		} else {
-			// req.Header.Add("Connection", "close")
-			// resp, err := client.Do(req)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
 			defer resp.Body.Close()
-			// if (resp.StatusCode != 200) {
-			// 	log.Fatal(http.StatusText(resp.StatusCode))
-			// }
 
 			switch resp.StatusCode {
 			case 200:

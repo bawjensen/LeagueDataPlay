@@ -229,7 +229,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPl
 		expandedPlayers.Union(results)
 	}
 
-	fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
+	// fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
 	
 	return expandedPlayers
 }
@@ -297,7 +297,7 @@ func SearchPlayerLeague(iPlayers interface{}, visited map[int]*IntSet) (expanded
 		}
 	}
 
-	fmt.Printf("Got %d from league\n", expandedPlayers.Size())
+	// fmt.Printf("Got %d from league\n", expandedPlayers.Size())
 
 	return expandedPlayers
 }

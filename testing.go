@@ -50,16 +50,33 @@ func main() {
 
 	// fmt.Println(MATCH_BEGIN_TIME)
 
-	m := make(map[int]*IntSet)
-	s := NewIntSet()
+	// m := make(map[int]*IntSet)
+	// s := NewIntSet()
 
-	m[LEAGUES] = s
+	// m[LEAGUES] = s
 
-	s.Add(1)
+	// s.Add(1)
 
-	test(m)
+	// test(m)
 
-	fmt.Println(m)
+	// fmt.Println(m)
+
+	code := 200
+
+	switch code {
+	case 200:
+		fmt.Println("0")
+	default:
+		fmt.Println("default")
+	case 201:
+		fmt.Println("1")
+	case 202:
+		fmt.Println("2")
+	case 203:
+		fmt.Println("3")
+	// default:
+	// 	fmt.Println("default")
+	}
 }
 
 // package main

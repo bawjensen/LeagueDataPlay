@@ -122,7 +122,7 @@ func init() {
 		curr := 0
 		for {
 			<-requestReportChan
-			fmt.Printf("\rCurrently at %d requests\r", curr)
+			fmt.Printf("\rCurrently at %d requests", curr)
 			curr++
 		}
 	}()

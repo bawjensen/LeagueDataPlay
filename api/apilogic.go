@@ -125,18 +125,18 @@ func getJson(urlString string, data interface{}) (err error) {
 		resp, err = http.Get(urlString)
 		// req, err := http.NewRequest("GET", urlString, nil)
 		if err != nil {
-			fmt.Println("Got an error, checking if timeout")
+			fmt.Printf("Got an error, checking if timeout... ")
 			switch err := err.(type) {
 			case *url.Error:
 				if err, ok := err.Err.(net.Error); ok && err.Timeout() {
-					fmt.Println("Was timeout")
+					fmt.Println("was timeout")
 				}
 			case net.Error:
 				if err.Timeout() {
-					fmt.Println("Was timeout")
+					fmt.Println("was timeout")
 				}
 			default:
-				fmt.Println("Wasn't timeout, time to fatal log")
+				fmt.Println("wasn't timeout, time to fatal log")
 				log.Fatal(err)
 			}
 		} else {
@@ -154,14 +154,13 @@ func getJson(urlString string, data interface{}) (err error) {
 			case 200:
 				gotResp = true
 			case 429:
-				// fmt.Println("Type", resp.Header["X-Rate-Limit-Type"])
-				fmt.Println(resp.StatusCode, "for", urlString)
-				log.Fatal(resp.Header)
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
-					fmt.Println("Sleeping for", sleepTimeSlice[0])
-					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
-					time.Sleep(time.Duration(sleep))
+					fmt.Println(resp.StatusCode, "for", urlString)
+					log.Fatal(resp.Header)
+					// fmt.Println("Sleeping for", sleepTimeSlice[0])
+					// sleep, _ := strconv.Atoi(sleepTimeSlice[0])
+					// time.Sleep(time.Duration(sleep))
 				}
 			case 404:
 				fmt.Println("Issue with:", urlString)

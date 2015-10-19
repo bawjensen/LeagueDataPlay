@@ -135,8 +135,8 @@ func getJson(urlString string, data interface{}) (err error) {
 	gotResp := false
 	for !gotResp {
 		ratethrottle.Wait()
-		
-		resp, err = http.Get(urlString)
+
+		resp, err = client.Get(urlString)
 		if err != nil {
 			fmt.Println("Got an error, checking if timeout... ")
 			switch err := err.(type) {

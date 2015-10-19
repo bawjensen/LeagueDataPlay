@@ -131,9 +131,17 @@ func getJson(urlString string, data interface{}) (err error) {
 				if err, ok := err.Err.(net.Error); ok && err.Timeout() {
 					fmt.Println("was timeout")
 				}
+				else {
+					fmt.Println("wasn't timeout, time to fatal log")
+					log.Fatal(err)
+				}
 			case net.Error:
 				if err.Timeout() {
 					fmt.Println("was timeout")
+				}
+				else {
+					fmt.Println("wasn't timeout, time to fatal log")
+					log.Fatal(err)
 				}
 			default:
 				fmt.Println("wasn't timeout, time to fatal log")
@@ -155,7 +163,7 @@ func getJson(urlString string, data interface{}) (err error) {
 					// time.Sleep(time.Duration(sleep))
 				}
 			case 404:
-				fmt.Println("Issue with:", urlString)
+				fmt.Println("404 - :", urlString)
 				err = errors.New(fmt.Sprintf("Issue with: %s", urlString))
 				gotResp = true
 			}

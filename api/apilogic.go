@@ -173,13 +173,13 @@ func getJson(urlString string, data interface{}) (err error) {
 				if len(sleepTimeSlice) > 0 {
 					numRateLimits++
 					if numRateLimits > 100 {
-						fmt.Println("Got too many rate limits, bugging out")
+						fmt.Println("\rGot too many rate limits, bugging out")
 						log.Fatal(resp.Header)
 					}
-					fmt.Println(resp.StatusCode, "for", urlString)
-					fmt.Println("Sleeping for", sleepTimeSlice[0])
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
-					time.Sleep(time.Duration(sleep + 1))
+					sleep += 1
+					fmt.Println("\rGot a 429, sleeping for", sleep)
+					time.Sleep(time.Duration(sleep))
 				}
 			case 404:
 				fmt.Println(resp.StatusCode, "-", urlString)

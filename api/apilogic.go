@@ -1,6 +1,7 @@
 package api
 
 import(
+	// "crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,7 +26,7 @@ import(
 // ------------------------------------ Globals ----------------------------------------
 
 // client := &http.Client{}
-var client http.Client
+var client *http.Client
 var requestReportChan chan bool
 var numRateLimits int
 
@@ -122,6 +123,11 @@ func init() {
 
 	numRateLimits = 0
 
+	tr := &http.Transport{
+		MaxIdleConnsPerHost: 100,
+	}
+	client = &http.Client{Transport: tr}
+
 	go func() {
 		curr := 0
 		for {
@@ -140,7 +146,12 @@ func getJson(urlString string, data interface{}) (err error) {
 	for !gotResp {
 		ratethrottle.Wait()
 
-		resp, err = client.Get(urlString)
+		req, _ := http.NewRequest("GET", urlString, nil)
+		req.Header.Add("Connection", "keep-alive")
+		resp, err = client.Do(req)
+
+		// resp, err = client.Get(urlString)
+
 		if err != nil {
 			wasTimeout := false
 			switch err := err.(type) {

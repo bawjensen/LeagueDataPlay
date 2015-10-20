@@ -149,13 +149,13 @@ func getJson(urlString string, data interface{}) (err error) {
 	for !gotResp {
 		ratethrottle.Wait()
 
-		fmt.Println("Request to:", urlString)
+		// fmt.Println("Request to:", urlString)
 
 		req, _ := http.NewRequest("GET", urlString, nil)
 		req.Header.Add("Connection", "keep-alive")
 		resp, err = client.Do(req)
 		
-		fmt.Println("Got response")
+		// fmt.Println("Got response")
 
 		// resp, err = client.Get(urlString)
 

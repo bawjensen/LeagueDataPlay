@@ -140,10 +140,11 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited map[int]*IntS
 		for {
 			input := <-inChan
 
+			// Do league first, so league can weed out players of too-low tier
 			leagueIn <- input
-			matchIn <- input
-
 			outputLeague := <-leagueOut
+
+			matchIn <- input
 			outputMatch := <-matchOut
 
 			outputMatch.Union(outputLeague)

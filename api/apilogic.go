@@ -5,7 +5,7 @@ import(
 	"encoding/json"
 	// "errors"
 	"fmt"
-	// "io/ioutil"
+	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
@@ -209,6 +209,8 @@ func getJson(urlString string, data interface{}) {
 
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
+
+	_, _ = ioutil.ReadAll(resp.Body)
 
 	eventReportChan <- REQUEST_EVENT
 }

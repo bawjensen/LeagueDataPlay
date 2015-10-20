@@ -6,7 +6,7 @@ import(
 	// "errors"
 	"fmt"
 	"io/ioutil"
-	"log"
+	// "log"
 	"math"
 	"math/rand"
 	"net"

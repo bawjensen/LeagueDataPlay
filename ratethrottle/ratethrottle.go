@@ -42,10 +42,9 @@ func init() {
     if instance != nil {
         fmt.Println("instance wasn't nil - How is this possible?")
     }
-    fmt.Println("Initializing rate throttler")
 
-    instance = new(RateThrottle)
-    (*instance) = newRateThrottle()
+    instance = new(RateThrottle) // Allocate an actual space for non-nil RateThrottle
+    (*instance) = newRateThrottle() // Populate that
 
     go func() {
         for {
@@ -64,8 +63,10 @@ func init() {
 }
 
 func newRateThrottle() (self RateThrottle) {
-    // Increase the time of the rate throttle by 1.1, to account for small issues with rate limiting
-    self = RateThrottle{buffer: newRingBuffer(REQUEST_CAP / RATE_THROTTLE_GRANULARITY, ((REQUEST_PERIOD + RATE_THROTTLE_BUFFER) * time.Second) / RATE_THROTTLE_GRANULARITY), wait: make(chan bool)}
+    size := int(REQUEST_CAP / RATE_THROTTLE_GRANULARITY)
+    time := ((REQUEST_PERIOD + RATE_THROTTLE_BUFFER) * time.Second) / RATE_THROTTLE_GRANULARITY
+    fmt.Printf("Initializing rate throttler with size %d and time %v\n", size, time)
+    self = RateThrottle{buffer: newRingBuffer(int(size), time), wait: make(chan bool)}
     return
 }
 

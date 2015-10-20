@@ -245,8 +245,10 @@ func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPl
 	getJson(matchlistUrl, &matchlistData)
 
 	ch := make(chan *IntSet)
+	activeMatches := 0
 	for _, match := range matchlistData.Matches {
 		if match.Region == "NA" && match.Queue == DESIRED_QUEUE {
+			activeMatches++
 			go func(matchId int64) {
 				newIds := NewIntSet()
 
@@ -269,7 +271,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPl
 		}
 	}
 
-	for _ = range matchlistData.Matches {
+	for i := 0; i < activeMatches; i++ {
 		results := <-ch
 		expandedPlayers.Union(results)
 	}

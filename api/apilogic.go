@@ -123,15 +123,13 @@ const (
 func init() {
 	eventReportChan = make(chan byte)
 
-	// numRateLimits = 0
-
 	tr := &http.Transport{
 		MaxIdleConnsPerHost: 100,
 	}
 	client = &http.Client{Transport: tr}
 
 	go func() {
-		var events [3]byte
+		var events [3]int
 
 		var eventType byte
 
@@ -185,11 +183,6 @@ func getJson(urlString string, data interface{}) (err error) {
 			case 429:
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
-					// numRateLimits++
-					// if numRateLimits > 100 {
-					// 	fmt.Println("Got too many rate limits, bugging out")
-					// 	log.Fatal(resp.Header)
-					// }
 					eventReportChan <- RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
 					sleep += 1

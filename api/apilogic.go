@@ -195,7 +195,7 @@ func getJson(urlString string, data interface{}) {
 				if len(sleepTimeSlice) > 0 {
 					eventReportChan <- RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
-					sleep += 1
+					// sleep += 1
 					// fmt.Println("\rGot a 429 user-based rate limit, sleeping for", sleep)
 					time.Sleep(time.Duration(sleep))
 				}

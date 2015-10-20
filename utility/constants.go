@@ -11,7 +11,7 @@ const (
 	NUM_SEARCHES = 2 // Leagues and Matches
 
 	// Configurable
-	NUM_INTERMEDIATES = 5 // Number of workers per searching section (e.g. league/match)
+	NUM_INTERMEDIATES = 2 // Number of workers per searching section (e.g. league/match)
 	RATE_THROTTLE_GRANULARITY = 10.0 // Divide both time and requests by this value when throttling
 	RATE_THROTTLE_BUFFER = 1 // seconds
 

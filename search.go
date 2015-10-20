@@ -188,10 +188,10 @@ func search() {
 		in <- newPlayers
 		newPlayers = <-out
 
-		fmt.Printf("visited (%d)\n", visited[PLAYERS].Size())
+		fmt.Printf("\n\nvisited (%d)\n", visited[PLAYERS].Size())
 		fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
 
-		fmt.Printf("Iteration: %v\n\n", time.Since(start))
+		fmt.Printf("Iteration: %v\n", time.Since(start))
 	}
 }
 

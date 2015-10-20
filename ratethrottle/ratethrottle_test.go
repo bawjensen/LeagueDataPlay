@@ -1,6 +1,7 @@
 package ratethrottle_test
 
 import (
+	// "fmt"
 	"testing"
 	"time"
 
@@ -11,14 +12,14 @@ import (
 func TestWait(t *testing.T) {
 	start := time.Now()
 
-	numOverflows := 3
+	numRequestCapHits := 5
 
-	for i := 0; i < REQUEST_CAP * numOverflows; i++ {
+	for i := 0; i < REQUEST_CAP * numRequestCapHits; i++ {
 		Wait()
 	}
 
-	expectedLower := time.Duration((numOverflows - 1) * REQUEST_PERIOD) * time.Second
-	expectedUpper := time.Duration((numOverflows - 1) * REQUEST_PERIOD + 1) * time.Second
+	expectedLower := time.Duration(numRequestCapHits) * REQUEST_PERIOD * time.Second
+	expectedUpper := time.Duration(numRequestCapHits + 1) * REQUEST_PERIOD * time.Second
 
 	// if elapsed := time.Now().Sub(start); elapsed < expectedSeconds {
 	if elapsed := time.Now().Sub(start); !(elapsed > expectedLower && elapsed < expectedUpper) {

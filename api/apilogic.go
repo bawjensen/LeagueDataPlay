@@ -27,8 +27,8 @@ import(
 
 // client := &http.Client{}
 var client *http.Client
-var requestReportChan chan bool
-var numRateLimits int
+var eventReportChan chan byte
+// var numRateLimits int
 
 // ------------------------------------ API response types -----------------------------
 
@@ -112,16 +112,18 @@ type LeagueDto struct {
 	Tier				string
 }
 
-type timeoutError interface {
-	Timeout() bool
-}
+const (
+	REQUEST_EVENT = iota
+	TIMEOUT_EVENT
+	RATE_LIMIT_EVENT
+)
 
 // ------------------------------------ Helper logic -----------------------------------
 
 func init() {
-	requestReportChan = make(chan bool)
+	eventReportChan = make(chan byte)
 
-	numRateLimits = 0
+	// numRateLimits = 0
 
 	tr := &http.Transport{
 		MaxIdleConnsPerHost: 100,
@@ -129,11 +131,16 @@ func init() {
 	client = &http.Client{Transport: tr}
 
 	go func() {
-		curr := 0
+		var events [3]byte
+
+		var eventType byte
+
 		for {
-			<-requestReportChan
-			fmt.Printf("\rCurrently at %d requests", curr)
-			curr++
+			eventType = <-eventReportChan
+
+			events[eventType]++
+
+			fmt.Printf("\rCurrently at %d requests, %d timeouts, %d rate limits", events[REQUEST_EVENT], events[TIMEOUT_EVENT], events[RATE_LIMIT_EVENT])
 		}
 	}()
 }
@@ -162,7 +169,8 @@ func getJson(urlString string, data interface{}) (err error) {
 				wasTimeout = err.Timeout()
 			}
 			if wasTimeout {
-				fmt.Println("Timeout err:", err)
+				// fmt.Println("Timeout err:", err)
+				eventReportChan <- TIMEOUT_EVENT
 			} else {
 				fmt.Println("wasn't timeout, time to fatal log")
 				log.Fatal(err)
@@ -177,11 +185,12 @@ func getJson(urlString string, data interface{}) (err error) {
 			case 429:
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
-					numRateLimits++
-					if numRateLimits > 100 {
-						fmt.Println("Got too many rate limits, bugging out")
-						log.Fatal(resp.Header)
-					}
+					// numRateLimits++
+					// if numRateLimits > 100 {
+					// 	fmt.Println("Got too many rate limits, bugging out")
+					// 	log.Fatal(resp.Header)
+					// }
+					eventReportChan <- RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
 					sleep += 1
 					fmt.Println("\rGot a 429 user-based rate limit, sleeping for", sleep)
@@ -198,7 +207,7 @@ func getJson(urlString string, data interface{}) (err error) {
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
 
-	requestReportChan <- true
+	eventReportChan <- REQUEST_EVENT
 
 	return err
 }

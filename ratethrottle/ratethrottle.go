@@ -64,7 +64,7 @@ func init() {
 
 func newRateThrottle() (self RateThrottle) {
     size := int(REQUEST_CAP / RATE_THROTTLE_GRANULARITY)
-    time := ((REQUEST_PERIOD + RATE_THROTTLE_BUFFER) * time.Second) / RATE_THROTTLE_GRANULARITY
+    time := ((REQUEST_PERIOD + RATE_THROTTLE_BUFFER) * 1000 * time.Millisecond) / RATE_THROTTLE_GRANULARITY
     fmt.Printf("Initializing rate throttler with size %d and time %v\n", size, time)
     self = RateThrottle{buffer: newRingBuffer(int(size), time), wait: make(chan bool)}
     return

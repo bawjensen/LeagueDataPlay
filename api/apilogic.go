@@ -180,9 +180,9 @@ func getJson(urlString string, data interface{}) {
 			} else if wasReset {
 				// eventReportChan <- RESET_EVENT
 			} else {
-				fmt.Println("wasn't timeout, time to fatal log")
-				log.Fatal(err)
-
+				// fmt.Println("wasn't timeout, time to fatal log")
+				// log.Fatal(err)
+				fmt.Println("Faking a fatal log, let's see what this does", err)
 			}
 		} else {
 			defer resp.Body.Close()

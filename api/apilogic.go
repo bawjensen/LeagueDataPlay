@@ -226,11 +226,13 @@ func InputPrepperMatch(players *IntSet) (sliced []interface{}) {
 }
 
 func createMatchUrl(match int64) string {
-	return MATCH_PREFIX + strconv.FormatInt(match, 10) + "?api_key=" + API_KEY
+	parts := []string{ MATCH_PREFIX, strconv.FormatInt(match, 10), "?api_key=", API_KEY }
+	return strings.Join(parts, "")
 }
 
 func createMatchlistUrl(player int64) string {
-	return MATCHLIST_PREFIX + strconv.FormatInt(player, 10) + "?beginTime=" + MATCH_BEGIN_TIME + "&api_key=" + API_KEY
+	parts := []string{ MATCHLIST_PREFIX, strconv.FormatInt(player, 10), "?beginTime=", MATCH_BEGIN_TIME, "&api_key=", API_KEY }
+	return strings.Join(parts, "")
 }
 
 func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPlayers *IntSet) {
@@ -311,7 +313,8 @@ func createLeagueUrl(players []int64) string {
 		stringPlayers[i] = strconv.FormatInt(id, 10)
 	}
 
-	return LEAGUE_PREFIX + strings.Join(stringPlayers, ",") + "?api_key=" + API_KEY
+	parts := []string{ LEAGUE_PREFIX, strings.Join(stringPlayers, ","), "?api_key=", API_KEY }
+	return strings.Join(parts, "")
 }
 
 func SearchPlayerLeague(iPlayers interface{}, visited map[int]*IntSet) (expandedPlayers *IntSet) {

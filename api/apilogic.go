@@ -122,6 +122,20 @@ const (
 
 // ------------------------------------ Helper logic -----------------------------------
 
+var tierChecker map[string]bool = map[string]bool{
+	"CHALLENGER": 	true,
+	"MASTER": 		true,
+	"DIAMOND": 		true,
+	"PLATINUM": 	true,
+	"GOLD": 		false,
+	"SILVER": 		false,
+	"BRONZE": 		false,
+}
+func highEnoughTier(tierStr string) bool {
+	_, ok := tierChecker[tierStr]
+	return ok
+}
+
 func init() {
 	eventReportChan = make(chan byte)
 
@@ -340,12 +354,16 @@ func SearchPlayerLeague(iPlayers interface{}, visited map[int]*IntSet) (expanded
 	for playerId := range leagueData {
 		for _, leagueDto := range leagueData[playerId] {
 			if leagueDto.Queue == DESIRED_QUEUE {
-				for _, entry := range leagueDto.Entries {
-					id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
-					if !visited[PLAYERS].Has(id) {
-						expandedPlayers.Add(id)
+				if highEnoughTier(leagueDto.Tier) {
+					for _, entry := range leagueDto.Entries {
+						id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
+						if !visited[PLAYERS].Has(id) {
+							expandedPlayers.Add(id)
+						}
 					}
-				}
+				} /*else {
+					visited[PLAYERS].Remove()
+				}*/
 			}
 		}
 	}

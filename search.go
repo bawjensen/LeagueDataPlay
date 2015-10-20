@@ -134,28 +134,20 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited map[int]*IntS
 	visited[PLAYERS] = NewIntSet()
 
 	go func() {
-		// leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
+		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
 		matchIn, matchOut := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
 
 		for {
 			input := <-inChan
 
-			// leagueIn <- input
+			leagueIn <- input
 			matchIn <- input
 
-			for value := range input.Values() {
-				visited[PLAYERS].Add(value)
-			}
-
-			// outputLeague := <-leagueOut
+			outputLeague := <-leagueOut
 			outputMatch := <-matchOut
 
-			// fmt.Println("outputLeague:", outputLeague)
-			// fmt.Println("outputMatch:", outputMatch)
+			outputMatch.Union(outputLeague)
 
-			// outputLeague.Union(outputMatch)
-
-			// outChan <- outputLeague
 			outChan <- outputMatch
 		}
 	}()
@@ -167,8 +159,6 @@ func search() {
 	in, out, visited := createSearchIterator()
 
 	initialSeeds := NewIntSet()
-	// initialSeeds.Add(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-	// initialSeeds.Add(0, 1, 2, 3)
 	initialSeeds.Add(51405)
 	initialSeeds.Add(10077)
 
@@ -179,31 +169,31 @@ func search() {
 	var start time.Time
 
 	for newPlayers.Size() > 0 {
-	// for newPlayers.Size() < 100 {
-		// fmt.Printf("visited (%d)\n", visited.Size())
-		// fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
-
 		start = time.Now()
+
+		visited[PLAYERS].Union(newPlayers) // TODO: Remove all low-skill players?
+
+		fmt.Printf("\nvisited (%d)\n", visited[PLAYERS].Size())
+		fmt.Printf("newPlayers (%d)\n\n", newPlayers.Size())
 
 		in <- newPlayers
 		newPlayers = <-out
 
-		fmt.Printf("\n\nvisited (%d)\n", visited[PLAYERS].Size())
-		fmt.Printf("newPlayers (%d)\n", newPlayers.Size())
-
-		fmt.Printf("Iteration: %v\n", time.Since(start))
+		fmt.Printf("\n\nIteration: %v\n", time.Since(start))
 	}
 }
 
-// func trace() time.Time {
-//     return time.Now()
-// }
-// func un(startTime time.Time) {
-//     fmt.Println("Total elapsedTime:", time.Since(startTime))
-// }
+func trace() time.Time {
+    return time.Now()
+}
+func un(startTime time.Time) {
+    fmt.Println("Total elapsedTime:", time.Since(startTime))
+}
 
 
 func main() {
+    defer un(trace())
+
     flag.Parse()
     if *cpuprofile != "" {
         f, err := os.Create(*cpuprofile)
@@ -213,7 +203,6 @@ func main() {
         pprof.StartCPUProfile(f)
         defer pprof.StopCPUProfile()
     }
-
 	// defer un(trace())
 	rand.Seed( time.Now().UTC().UnixNano())
 

@@ -115,6 +115,9 @@ const (
 	REQUEST_EVENT = iota
 	TIMEOUT_EVENT
 	RATE_LIMIT_EVENT
+	UNKNOWN_ERROR_EVENT
+
+	NUM_ERRORS // As long as it's at the end, will correctly reflect the number of "enums" in this const block
 )
 
 // ------------------------------------ Helper logic -----------------------------------
@@ -128,7 +131,7 @@ func init() {
 	client = &http.Client{Transport: tr}
 
 	go func() {
-		var events [3]int
+		var events [NUM_ERRORS]int
 
 		var eventType byte
 
@@ -137,7 +140,8 @@ func init() {
 
 			events[eventType]++
 
-			fmt.Printf("\rCurrently at %d requests, %d timeouts, %d rate limits", events[REQUEST_EVENT], events[TIMEOUT_EVENT], events[RATE_LIMIT_EVENT])
+			fmt.Printf("\rCurrently at %d requests, %d timeouts, %d rate limits, %d unknown errors",
+				events[REQUEST_EVENT], events[TIMEOUT_EVENT], events[RATE_LIMIT_EVENT], events[UNKNOWN_ERROR_EVENT])
 		}
 	}()
 }
@@ -182,7 +186,8 @@ func getJson(urlString string, data interface{}) {
 			} else {
 				// fmt.Println("wasn't timeout, time to fatal log")
 				// log.Fatal(err)
-				fmt.Println("Faking a fatal log, let's see what this does", err)
+				// fmt.Println("Faking a fatal log, let's see what this does", err)
+				eventReportChan <- UNKNOWN_ERROR_EVENT
 			}
 		} else {
 			defer resp.Body.Close()

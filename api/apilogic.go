@@ -3,7 +3,7 @@ package api
 import(
 	// "crypto/tls"
 	"encoding/json"
-	"errors"
+	// "errors"
 	"fmt"
 	// "io/ioutil"
 	"log"
@@ -15,6 +15,7 @@ import(
 	// "reflect"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bawjensen/dataplay/ratethrottle"
@@ -143,8 +144,9 @@ func init() {
 
 // ------------------------------------ General logic ----------------------------------
 
-func getJson(urlString string, data interface{}) (err error) {
+func getJson(urlString string, data interface{}) {
 	var resp *http.Response
+	var err error
 	gotResp := false
 	for !gotResp {
 		ratethrottle.Wait()
@@ -161,7 +163,11 @@ func getJson(urlString string, data interface{}) (err error) {
 
 		if err != nil {
 			wasTimeout := false
+			wasReset := false
 			switch err := err.(type) {
+			case *net.OpError:
+				oErr, _ := err.Err.(*net.OpError)
+				wasReset = (oErr.Error() == syscall.ECONNRESET.Error())
 			case *url.Error:
 				nErr, ok := err.Err.(net.Error)
 				wasTimeout = (ok && nErr.Timeout())
@@ -171,6 +177,8 @@ func getJson(urlString string, data interface{}) (err error) {
 			if wasTimeout {
 				// fmt.Println("Timeout err:", err)
 				eventReportChan <- TIMEOUT_EVENT
+			} else if wasReset {
+				// eventReportChan <- RESET_EVENT
 			} else {
 				fmt.Println("wasn't timeout, time to fatal log")
 				log.Fatal(err)
@@ -193,7 +201,7 @@ func getJson(urlString string, data interface{}) (err error) {
 				}
 			case 404:
 				fmt.Println(resp.StatusCode, "-", urlString)
-				err = errors.New(fmt.Sprintf("Issue with: %s", urlString))
+				// err = errors.New(fmt.Sprintf("Issue with: %s", urlString))
 				gotResp = true
 			}
 		}
@@ -203,8 +211,6 @@ func getJson(urlString string, data interface{}) (err error) {
 	decoder.Decode(data)
 
 	eventReportChan <- REQUEST_EVENT
-
-	return err
 }
 
 // ------------------------------------ Match logic ------------------------------------

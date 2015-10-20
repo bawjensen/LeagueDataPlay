@@ -37,8 +37,8 @@ type MatchlistResponse struct {
 		// Lane		string
 		MatchId		int64
 		// PlatformId	string
-		// Queue		string
-		// Region		string
+		Queue		string
+		Region		string
 		// Role		string
 		// Season		string
 		// Timestamp	int64
@@ -78,7 +78,7 @@ type MatchResponse struct {
 	// 	Timeline					ParticipantTimeline
 	// }
 	// PlatformId				string
-	// QueueType				string
+	QueueType				string
 	// Region					string
 	// Season					string
 	// Teams					[]Team
@@ -196,7 +196,7 @@ func getJson(urlString string, data interface{}) {
 					eventReportChan <- RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
 					sleep += 1
-					fmt.Println("\rGot a 429 user-based rate limit, sleeping for", sleep)
+					// fmt.Println("\rGot a 429 user-based rate limit, sleeping for", sleep)
 					time.Sleep(time.Duration(sleep))
 				}
 			case 404:
@@ -246,23 +246,27 @@ func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPl
 
 	ch := make(chan *IntSet)
 	for _, match := range matchlistData.Matches {
-		go func(matchId int64) {
-			newIds := NewIntSet()
+		if match.Region == "NA" && match.Queue == DESIRED_QUEUE {
+			go func(matchId int64) {
+				newIds := NewIntSet()
 
-			if (!visited[MATCHES].Has(matchId)) {
-				var matchData MatchResponse
-				matchUrl := createMatchUrl(matchId)
-				getJson(matchUrl, &matchData)
+				if (!visited[MATCHES].Has(matchId)) {
+					var matchData MatchResponse
+					matchUrl := createMatchUrl(matchId)
+					getJson(matchUrl, &matchData)
 
-				for _, participant := range matchData.ParticipantIdentities {
-					if !visited[PLAYERS].Has(participant.Player.SummonerId) {
-						newIds.Add(participant.Player.SummonerId)
+					if matchData.QueueType == DESIRED_QUEUE {
+						for _, participant := range matchData.ParticipantIdentities {
+							if !visited[PLAYERS].Has(participant.Player.SummonerId) {
+								newIds.Add(participant.Player.SummonerId)
+							}
+						}
 					}
 				}
-			}
 
-			ch <- newIds
-		}(match.MatchId)
+				ch <- newIds
+			}(match.MatchId)
+		}
 	}
 
 	for _ = range matchlistData.Matches {

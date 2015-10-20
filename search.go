@@ -217,7 +217,7 @@ func main() {
 	// defer un(trace())
 	rand.Seed( time.Now().UTC().UnixNano())
 
-	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU()))
+	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU())) // Note: Setting, but returns the old for output
 	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(0))
 
 	search()

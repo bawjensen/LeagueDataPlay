@@ -6,7 +6,7 @@ import(
 	// "errors"
 	"fmt"
 	"io/ioutil"
-	// "log"
+	"log"
 	"math"
 	"math/rand"
 	"net"
@@ -201,6 +201,7 @@ func getJson(urlString string, data interface{}) {
 				// fmt.Println("wasn't timeout, time to fatal log")
 				// log.Fatal(err)
 				// fmt.Println("Faking a fatal log, let's see what this does", err)
+				log.Println("err:", err)
 				eventReportChan <- UNKNOWN_ERROR_EVENT
 			}
 		} else {

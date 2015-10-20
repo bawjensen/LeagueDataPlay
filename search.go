@@ -18,7 +18,7 @@ import (
 
 // ------------------------------------ Global variables -------------------------------------------
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var cpuprofile = flag.String("prof", "", "write cpu profile to file")
 
 // ------------------------------------ Search logic -----------------------------------------------
 

@@ -142,25 +142,20 @@ func getJson(urlString string, data interface{}) (err error) {
 
 		resp, err = client.Get(urlString)
 		if err != nil {
-			fmt.Println("Got an error, checking if timeout... ")
+			wasTimeout := false
 			switch err := err.(type) {
 			case *url.Error:
-				if err, ok := err.Err.(net.Error); ok && err.Timeout() {
-					fmt.Println("was timeout", err)
-				} else {
-					fmt.Println("wasn't timeout, time to fatal log")
-					log.Fatal(err)
-				}
+				nErr, ok := err.Err.(net.Error)
+				wasTimeout = (ok && nErr.Timeout())
 			case net.Error:
-				if err.Timeout() {
-					fmt.Println("was timeout", err)
-				} else {
-					fmt.Println("wasn't timeout, time to fatal log")
-					log.Fatal(err)
-				}
-			default:
+				wasTimeout = err.Timeout()
+			}
+			if wasTimeout {
+				fmt.Println("Timeout err:", err)
+			} else {
 				fmt.Println("wasn't timeout, time to fatal log")
 				log.Fatal(err)
+
 			}
 		} else {
 			defer resp.Body.Close()
@@ -173,12 +168,12 @@ func getJson(urlString string, data interface{}) (err error) {
 				if len(sleepTimeSlice) > 0 {
 					numRateLimits++
 					if numRateLimits > 100 {
-						fmt.Println("\rGot too many rate limits, bugging out")
+						fmt.Println("Got too many rate limits, bugging out")
 						log.Fatal(resp.Header)
 					}
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
 					sleep += 1
-					fmt.Println("\rGot a 429, sleeping for", sleep)
+					fmt.Println("\rGot a 429 user-based rate limit, sleeping for", sleep)
 					time.Sleep(time.Duration(sleep))
 				}
 			case 404:

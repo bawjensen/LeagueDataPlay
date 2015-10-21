@@ -232,11 +232,11 @@ func getJson(urlString string, data interface{}) {
 			case 404:
 				log.Println(resp.StatusCode, "-", urlString)
 				gotResp = true
-			case 503:
+			case 500, 503:
 				eventReportChan <- SERVER_ERROR_EVENT
 				time.Sleep(time.Duration(1 * time.Second))
 			default:
-				log.Fatal("Got ", resp.StatusCode, urlString)
+				log.Fatal("Got ", resp.StatusCode, " with: ", urlString)
 			}
 
 			if !gotResp {

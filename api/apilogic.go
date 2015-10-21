@@ -112,7 +112,8 @@ type LeagueDto struct {
 }
 
 const (
-	REQUEST_EVENT = iota
+	REQUEST_SEND_EVENT = iota
+	REQUEST_SUCCESS_EVENT
 	TIMEOUT_EVENT
 	RATE_LIMIT_EVENT
 	UNKNOWN_ERROR_EVENT
@@ -155,8 +156,8 @@ func init() {
 
 			events[eventType]++
 
-			fmt.Printf("\rCurrently at %d requests, %d timeouts, %d rate limits, %d unknown errors",
-				events[REQUEST_EVENT], events[TIMEOUT_EVENT], events[RATE_LIMIT_EVENT], events[UNKNOWN_ERROR_EVENT])
+			fmt.Printf("\rCurrently at %d (%d) requests, %d rate limits, %d timeouts, %d unknown errors",
+				events[REQUEST_SUCCESS_EVENT], events[REQUEST_SEND_EVENT], events[RATE_LIMIT_EVENT], events[TIMEOUT_EVENT], events[UNKNOWN_ERROR_EVENT])
 		}
 	}()
 }
@@ -172,8 +173,9 @@ func getJson(urlString string, data interface{}) {
 
 		// fmt.Println("Request to:", urlString)
 
+		eventReportChan <- REQUEST_SEND_EVENT
+
 		req, _ := http.NewRequest("GET", urlString, nil)
-		fmt.Println("Made a new request")
 		req.Header.Add("Connection", "keep-alive")
 		resp, err = client.Do(req)
 		
@@ -234,7 +236,7 @@ func getJson(urlString string, data interface{}) {
 
 	_, _ = ioutil.ReadAll(resp.Body)
 
-	eventReportChan <- REQUEST_EVENT
+	eventReportChan <- REQUEST_SUCCESS_EVENT
 }
 
 // ------------------------------------ Match logic ------------------------------------

@@ -119,6 +119,7 @@ const (
 	RESET_EVENT
 	RATE_LIMIT_EVENT
 	UNKNOWN_ERROR_EVENT
+	SERVER_ERROR_EVENT
 
 	NUM_ERRORS // As long as it's at the end, will correctly reflect the number of "enums" in this const block
 )
@@ -161,7 +162,7 @@ func init() {
 
 			events[eventType]++
 
-			fmt.Printf("\rCurrently at %d (%d) requests, %d rate limits, %d timeouts, %d resets, %d unknown errors",
+			fmt.Printf("\rAt %d (%d) req's, %d r-lim, , %d serv-err, %d t/o, %d resets, %d ? errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
 				events[RATE_LIMIT_EVENT],
@@ -230,6 +231,9 @@ func getJson(urlString string, data interface{}) {
 			case 404:
 				log.Println(resp.StatusCode, "-", urlString)
 				gotResp = true
+			case 503:
+				eventReportChan <- SERVER_ERROR_EVENT
+				time.Sleep(time.Duration(1 * time.Second))
 			default:
 				log.Fatal("Huh?", resp.StatusCode)
 			}

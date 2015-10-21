@@ -29,6 +29,9 @@ import(
 
 var client *http.Client
 var eventReportChan chan byte
+const (
+	5XX_LIMIT = 10
+)
 
 // ------------------------------------ API response types -----------------------------
 
@@ -181,7 +184,7 @@ func getJson(urlString string, data interface{}) {
 	var err error
 
 	got404 := false
-	got5XX := false
+	num5XX := 0
 	gotResp := false
 	for !gotResp {
 		ratethrottle.Wait()
@@ -231,7 +234,6 @@ func getJson(urlString string, data interface{}) {
 					// sleep += 1
 					time.Sleep(time.Duration(sleep))
 				}
-				got5XX = false
 				got404 = false
 
 			case 404:
@@ -245,12 +247,12 @@ func getJson(urlString string, data interface{}) {
 
 			case 500, 503:
 				eventReportChan <- SERVER_ERROR_EVENT
-				if got5XX {
+				if num5XX > 5XX_LIMIT {
 					log.Fatal("Two 5XX's on this one url: ", resp.StatusCode, " ", urlString)
 				}
-				got5XX = true
-				time.Sleep(time.Duration(1 * time.Second))
-				
+				num5XX++
+				time.Sleep(time.Duration(2 * time.Second))
+
 			default:
 				log.Fatal("Got ", resp.StatusCode, " with: ", urlString)
 			}

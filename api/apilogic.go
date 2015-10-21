@@ -236,7 +236,7 @@ func getJson(urlString string, data interface{}) {
 				eventReportChan <- SERVER_ERROR_EVENT
 				time.Sleep(time.Duration(1 * time.Second))
 			default:
-				log.Fatal("Huh?", resp.StatusCode)
+				log.Fatal("Got ", resp.StatusCode, urlString)
 			}
 
 			if !gotResp {

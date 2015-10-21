@@ -30,7 +30,7 @@ import(
 var client *http.Client
 var eventReportChan chan byte
 const (
-	LIMIT_5XX = 10
+	LIMIT_5XX = 3
 )
 
 // ------------------------------------ API response types -----------------------------

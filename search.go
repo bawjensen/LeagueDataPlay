@@ -76,22 +76,27 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 				<-simulRequestLimiter // Wait for next available 'request slot'
 				log.Println("Took one, remaining:", len(simulRequestLimiter))
 				go func(value interface{}) {
-					log.Println("Sending value to mapper")
 					expanded, dirty := mapper(value, visited)
 					log.Println("Got value from mapper")
+					simulRequestLimiter <- true // Mark one 'request slot' as available
+					log.Println("Put one back on the list, remaining:", len(simulRequestLimiter))
 					expandedOut <- expanded
 					log.Println("Sent on expanded")
 					newDirtyOut <- dirty
 					log.Println("Sent on dirty")
-					simulRequestLimiter <- true // Mark one 'request slot' as available
-					log.Println("Put one back on the list, remaining:", len(simulRequestLimiter))
 				}(value)
 			}
+
+			// go func() {
+			// 	println("Putting trash on expandedOut")
+			// 	expandedOut <- NewIntSet()
+			// 	println("Put trash on expandedOut")
+			// }()
 
 			midLevelSet := NewIntSet()
 			dirtySet := NewIntSet()
 
-			log.Println("Listening for results", len(input))
+			println("Listening for results", len(input))
 			for _ = range input {
 				expanded := <-expandedOut
 				midLevelSet.Union(expanded)
@@ -99,6 +104,18 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 				dirty := <-newDirtyOut
 				dirtySet.Union(dirty)
 			}
+
+			// go func() {
+			// 	loop:
+			// 		for {
+			// 			select {
+			// 			case trash := <-expandedOut:
+			// 				log.Fatal("There was trash on expandedOut", trash)
+			// 			case <-time.After(200 * time.Millisecond):
+			// 				break loop
+			// 			}
+			// 		}
+			// }()
 
 			out <- midLevelSet
 			dirtyOut <- dirtySet
@@ -194,8 +211,6 @@ func search() {
 	in, out, visited := createSearchIterator()
 
 	initialSeeds := NewIntSet(51405, 10077)
-
-	// fmt.Println("initialSeeds:", initialSeeds)
 
 	newPlayers := initialSeeds
 

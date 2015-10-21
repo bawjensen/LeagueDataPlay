@@ -118,6 +118,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 
 	go func() {
 		for input := range inChan {
+			log.Println("Starting search run")
 			slices := partitionByNum(prepper(input), NUM_INTERMEDIATES)
 
 			topLevelSet := NewIntSet()

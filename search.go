@@ -71,7 +71,7 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 		newDirtyOut := make(chan *IntSet)
 	
 		for input := range in {
-			log.Println("Starting slice run")
+			log.Println("Starting slice run", len(input))
 			for _, value := range input {
 				<-simulRequestLimiter // Wait for next available 'request slot'
 				log.Println("Took one, remaining:", len(simulRequestLimiter))
@@ -91,6 +91,7 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			midLevelSet := NewIntSet()
 			dirtySet := NewIntSet()
 
+			log.Println("Listening for results", len(input))
 			for _ = range input {
 				expanded := <-expandedOut
 				midLevelSet.Union(expanded)

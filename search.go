@@ -74,6 +74,7 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			log.Println("Starting slice run")
 			for _, value := range input {
 				<-simulRequestLimiter // Wait for next available 'request slot'
+				log.Println("Took one, remaining:", len(simulRequestLimiter))
 				go func(value interface{}) {
 					expanded, dirty := mapper(value, visited)
 					expandedOut <- expanded

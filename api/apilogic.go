@@ -166,6 +166,7 @@ func init() {
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
 				events[RATE_LIMIT_EVENT],
+				events[SERVER_ERROR_EVENT],
 				events[TIMEOUT_EVENT],
 				events[RESET_EVENT],
 				events[UNKNOWN_ERROR_EVENT])

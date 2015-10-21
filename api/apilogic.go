@@ -30,7 +30,7 @@ import(
 var client *http.Client
 var eventReportChan chan byte
 const (
-	5XX_LIMIT = 10
+	LIMIT_5XX = 10
 )
 
 // ------------------------------------ API response types -----------------------------
@@ -247,7 +247,7 @@ func getJson(urlString string, data interface{}) {
 
 			case 500, 503:
 				eventReportChan <- SERVER_ERROR_EVENT
-				if num5XX > 5XX_LIMIT {
+				if num5XX > LIMIT_5XX {
 					log.Fatal("Two 5XX's on this one url: ", resp.StatusCode, " ", urlString)
 				}
 				num5XX++

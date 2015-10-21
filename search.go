@@ -98,7 +98,6 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			for _ = range input {
 				expanded := <-expandedOut
 				midLevelSet.Union(expanded)
-				log.Println("midLevelSet:", midLevelSet.Size())
 				dirty := <-newDirtyOut
 				dirtySet.Union(dirty)
 			}

@@ -72,7 +72,6 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			for _, value := range input {
 				go func(value interface{}) {
 					expanded, dirty := mapper(value, visited)
-					fmt.Println("Got lowest level")
 					expandedOut <- expanded
 					newDirtyOut <- dirty
 				}(value)
@@ -125,10 +124,8 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 
 			for _ = range slices {
 				results := <-sliceOutChan
-				fmt.Println("Got mid level results")
 				topLevelSet.Union(results)
 				dirty := <-sliceDirtyOutChan
-				fmt.Println("Got mid level dirty")
 				dirtySet.Union(dirty)
 			}
 

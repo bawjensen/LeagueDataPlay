@@ -11,6 +11,7 @@ import (
 	"runtime/pprof"
 	// "sync"
 	"time"
+
 	. "github.com/bawjensen/dataplay/api"
 	. "github.com/bawjensen/dataplay/utility"
 	// . "github.com/bawjensen/dataplay/constants"
@@ -210,6 +211,8 @@ func un(startTime time.Time) {
 func main() {
     defer un(trace())
 
+	rand.Seed(time.Now().UTC().UnixNano())
+
     flag.Parse()
     if *cpuprofile != "" {
         f, err := os.Create(*cpuprofile)
@@ -219,8 +222,12 @@ func main() {
         pprof.StartCPUProfile(f)
         defer pprof.StopCPUProfile()
     }
-	// defer un(trace())
-	rand.Seed( time.Now().UTC().UnixNano())
+
+    go func() {
+    	for _ = range time.Tick(5 * time.Second) {
+    		fmt.Println("Number of goroutines:", runtime.NumGoroutine())
+    	}
+    }()
 
 	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU())) // Note: Setting, but returns the old for output
 	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(0))

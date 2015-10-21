@@ -30,11 +30,13 @@ const (
 	ONE_WEEK =  7 * 24 * 60 * 60
 )
 
-// Used, for the moment, solely in the visited map
+// Used, for the moment, solely for indexing into the visited sets
 const (
-	LEAGUES = iota
+	PLAYERS = iota
 	MATCHES
-	PLAYERS
+	// LEAGUES
+
+	NUM_VISITED_SETS
 )
 
 var (

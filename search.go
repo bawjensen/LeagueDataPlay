@@ -61,7 +61,7 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 	return slices
 }
 
-func createSliceHandler(mapper func(interface{}, map[int]*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited map[int]*IntSet) {
+func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited []*IntSet) {
 	go func() {
 		for {
 			input := <-in
@@ -85,13 +85,13 @@ func createSliceHandler(mapper func(interface{}, map[int]*IntSet) *IntSet, in ch
 	}()
 }
 
-func createSliceHandlers(num int, mapper func(interface{}, map[int]*IntSet) *IntSet, subInChan chan []interface{}, subOutChan chan *IntSet, visited map[int]*IntSet) {
+func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) *IntSet, subInChan chan []interface{}, subOutChan chan *IntSet, visited []*IntSet) {
 	for i := 0; i < num; i++ {
 		createSliceHandler(mapper, subInChan, subOutChan, visited)
 	}
 }
 
-func createSearchHandler(mapper func(interface{}, map[int]*IntSet) *IntSet, prepper func(*IntSet) []interface{}, visited map[int]*IntSet) (inChan, outChan chan *IntSet) {
+func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
 	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
 	subInChan := make(chan []interface{}) // Every request funneled into one 'please' channel
@@ -126,10 +126,10 @@ func createSearchHandler(mapper func(interface{}, map[int]*IntSet) *IntSet, prep
 	return inChan, outChan
 }
 
-func createSearchIterator() (inChan, outChan chan *IntSet, visited map[int]*IntSet) {
+func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
-	visited = make(map[int]*IntSet)
+	visited = make([]*IntSet, NUM_VISITED_SETS, NUM_VISITED_SETS)
 	visited[MATCHES] = NewIntSet()
 	visited[PLAYERS] = NewIntSet()
 

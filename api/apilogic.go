@@ -255,7 +255,7 @@ func createMatchlistUrl(player int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPlayers *IntSet) {
+func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
 	player := iPlayer.(int64)
 
 	expandedPlayers = NewIntSet()
@@ -273,6 +273,8 @@ func SearchPlayerMatch(iPlayer interface{}, visited map[int]*IntSet) (expandedPl
 				newIds := NewIntSet()
 
 				if (!visited[MATCHES].Has(matchId)) {
+					visited[MATCHES].Add(matchId)
+					
 					var matchData MatchResponse
 					matchUrl := createMatchUrl(matchId)
 					getJson(matchUrl, &matchData)
@@ -343,7 +345,7 @@ func createLeagueUrl(players []int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerLeague(iPlayers interface{}, visited map[int]*IntSet) (expandedPlayers *IntSet) {
+func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
 	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse

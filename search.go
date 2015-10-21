@@ -80,7 +80,7 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 					expandedOut <- expanded
 					newDirtyOut <- dirty
 					simulRequestLimiter <- true // Mark one 'request slot' as available
-					log.Printf("Put one back on the list\n", len(simulRequestLimiter))
+					log.Println("Put one back on the list\n", len(simulRequestLimiter))
 				}(value)
 			}
 

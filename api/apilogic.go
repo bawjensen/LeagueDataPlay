@@ -251,7 +251,6 @@ func getJson(urlString string, data interface{}) {
 					log.Fatal(LIMIT_5XX, " 5XX's on this one url: ", resp.StatusCode, " ", urlString)
 				}
 				num5XX++
-				log.Println("Got another 5XX: ", num5XX, urlString)
 				time.Sleep(time.Duration(2 * time.Second))
 
 			default:

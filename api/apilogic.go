@@ -255,10 +255,11 @@ func createMatchlistUrl(player int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
+func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet, removedPlayers *IntSet) {
 	player := iPlayer.(int64)
 
 	expandedPlayers = NewIntSet()
+	removedPlayers = NewIntSet()
 
 	var matchlistData MatchlistResponse
 	matchlistUrl := createMatchlistUrl(player)
@@ -274,7 +275,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 
 				if (!visited[MATCHES].Has(matchId)) {
 					visited[MATCHES].Add(matchId)
-					
+
 					var matchData MatchResponse
 					matchUrl := createMatchUrl(matchId)
 					getJson(matchUrl, &matchData)
@@ -300,7 +301,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 
 	// fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
 	
-	return expandedPlayers
+	return expandedPlayers, removedPlayers
 }
 
 // ------------------------------------ League logic -----------------------------------
@@ -345,7 +346,7 @@ func createLeagueUrl(players []int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
+func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet, removedPlayers *IntSet) {
 	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse
@@ -354,6 +355,8 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 	getJson(leagueUrl, &leagueData)
 
 	expandedPlayers = NewIntSet()
+	removedPlayers = NewIntSet()
+
 	for playerId := range leagueData {
 		for _, leagueDto := range leagueData[playerId] {
 			if leagueDto.Queue == DESIRED_QUEUE {
@@ -364,16 +367,17 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 							expandedPlayers.Add(id)
 						}
 					}
-				} /*else {
-					visited[PLAYERS].Remove()
-				}*/
+				} else {
+					id, _ := strconv.ParseInt(playerId, 10, 64)
+					removedPlayers.Add(id)
+				}
 			}
 		}
 	}
 
 	// fmt.Printf("Got %d from league\n", expandedPlayers.Size())
 
-	return expandedPlayers
+	return expandedPlayers, removedPlayers
 }
 
 func RandomSummonerId() int {

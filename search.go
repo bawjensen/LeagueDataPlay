@@ -61,69 +61,80 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 	return slices
 }
 
-func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited []*IntSet) {
+func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), in chan []interface{}, out chan *IntSet, dirtyOut chan *IntSet, visited []*IntSet) {
 	go func() {
+		expandedOut := make(chan *IntSet)
+		dirtyOut := make(chan *IntSet)
+	
 		for {
 			input := <-in
 
-			midLevelSet := NewIntSet()
-			subOut := make(chan *IntSet)
-
 			for _, value := range input {
 				go func(value interface{}) {
-					subOut <- mapper(value, visited)
+					expanded, dirty := mapper(value, visited)
+					expandedOut <- expanded
+					dirtyOut <- dirty
 				}(value)
 			}
 
+			midLevelSet := NewIntSet()
+			dirtySet := NewIntSet()
+
 			for _ = range input {
-				results := <-subOut
-				midLevelSet.UnionWithout(results, visited[PLAYERS])
+				expanded := <-expandedOut
+				dirty := <-dirtyOut
+				midLevelSet.Union(expanded)
+				dirtySet.Union(dirty)
 			}
 
 			out <- midLevelSet
+			dirtyOut <- dirtySet
 		}
 	}()
 }
 
-func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) *IntSet, subInChan chan []interface{}, subOutChan chan *IntSet, visited []*IntSet) {
+func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), sliceInChan chan []interface{}, sliceOutChan chan *IntSet, sliceDirtyOutChan chan *IntSet, visited []*IntSet) {
 	for i := 0; i < num; i++ {
-		createSliceHandler(mapper, subInChan, subOutChan, visited)
+		createSliceHandler(mapper, sliceInChan, sliceOutChan, sliceDirtyOutChan, visited)
 	}
 }
 
-func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
-	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
+func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), prepper func(*IntSet) []interface{}, visited []*IntSet) (inChan, outChan, dirtyOutChan chan *IntSet) {
+	inChan, outChan, dirtyOutChan = make(chan *IntSet), make(chan *IntSet), make(chan *IntSet)
 
-	subInChan := make(chan []interface{}) // Every request funneled into one 'please' channel
-	subOutChan := make(chan *IntSet) // Every response funneled into one 'finished' channel
+	sliceInChan := make(chan []interface{}) // Every request funneled into one 'please' channel
+	sliceOutChan := make(chan *IntSet) // Every response funneled into one 'finished' channel
+	sliceDirtyOutChan := make(chan *IntSet) // Every response funneled into one 'finished' channel
 
-	createSliceHandlers(NUM_INTERMEDIATES, mapper, subInChan, subOutChan, visited)
+	createSliceHandlers(NUM_INTERMEDIATES, mapper, sliceInChan, sliceOutChan, sliceDirtyOutChan, visited)
 
 	go func() {
 		for {
 			input := <-inChan
 			slices := partitionByNum(prepper(input), NUM_INTERMEDIATES)
-			// slices := partitionBySize(input, 3)
-			superSet := NewIntSet()
 
-			// fmt.Println("slices:", slices)
+			topLevelSet := NewIntSet()
+			dirtySet := NewIntSet()
 
 			for _, slice := range slices {
 				go func(slice []interface{}) {
-					subInChan <- slice
+					sliceInChan <- slice
 				}(slice)
 			}
 
 			for _ = range slices {
-				results := <-subOutChan
-				superSet.Union(results)
+				results := <-sliceOutChan
+				dirty := <-sliceDirtyOutChan
+				topLevelSet.Union(results)
+				dirtySet.Union(dirty)
 			}
 
-			outChan <- superSet
+			outChan <- topLevelSet
+			dirtyOutChan <- dirtySet
 		}
 	}()
 
-	return inChan, outChan
+	return inChan, outChan, dirtyOutChan
 }
 
 func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
@@ -134,8 +145,8 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited[PLAYERS] = NewIntSet()
 
 	go func() {
-		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
-		matchIn, matchOut := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
+		leagueIn, leagueOut, leagueDirty := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
+		matchIn, matchOut, matchDirty := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
 
 		for {
 			input := <-inChan
@@ -143,9 +154,13 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 			// Do league first, so league can weed out players of too-low tier
 			leagueIn <- input
 			outputLeague := <-leagueOut
+			dirtyPlayers := <-leagueDirty
+
+			input.IntersectInverse(dirtyPlayers) // Remove all dirty players (too low tier, etc.)
 
 			matchIn <- input
 			outputMatch := <-matchOut
+			_ = <-matchDirty // Matches can't mark dirty players
 
 			outputMatch.Union(outputLeague)
 

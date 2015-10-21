@@ -42,6 +42,12 @@ func (self *IntSet) Add(elems ...int64) {
 	}
 }
 
+func (self *IntSet) Remove(elems ...int64) {
+	for _, elem := range elems {
+		delete(self.set, elem)
+	}
+}
+
 func (self *IntSet) Has(elem int64) bool {
 	return self.set[elem]
 }
@@ -59,6 +65,12 @@ func (self *IntSet) UnionWithout(other *IntSet, exclude *IntSet) {
 		} /*else {
 			fmt.Printf("Not adding %d because it was visited\n", elem)
 		}*/
+	}
+}
+
+func (self *IntSet) IntersectInverse(other *IntSet) {
+	for elem := range other.Values() {
+		self.Remove(elem)
 	}
 }
 

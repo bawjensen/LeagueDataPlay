@@ -230,6 +230,8 @@ func getJson(urlString string, data interface{}) {
 			case 404:
 				log.Println(resp.StatusCode, "-", urlString)
 				gotResp = true
+			default:
+				log.Fatal("Huh?", resp.StatusCode)
 			}
 
 			if !gotResp {

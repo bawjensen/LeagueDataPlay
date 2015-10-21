@@ -179,25 +179,25 @@ func init() {
 func getJson(urlString string, data interface{}) {
 	var resp *http.Response
 	var err error
+
+	got404 := false
+	got5XX := false
 	gotResp := false
 	for !gotResp {
 		ratethrottle.Wait()
 
-		// fmt.Println("Request to:", urlString)
-
 		eventReportChan <- REQUEST_SEND_EVENT
 
-		req, _ := http.NewRequest("GET", urlString, nil)
-		req.Header.Add("Connection", "keep-alive")
-		resp, err = client.Do(req)
+		// req, _ := http.NewRequest("GET", urlString, nil)
+		// req.Header.Add("Connection", "keep-alive")
+		// resp, err = client.Do(req)
 		
-		// fmt.Println("Got response")
-
-		// resp, err = client.Get(urlString)
+		resp, err = client.Get(urlString)
 
 		if err != nil {
 			wasTimeout := false
 			wasReset := false
+
 			switch err := err.(type) {
 			case *net.OpError:
 				oErr, _ := err.Err.(*net.OpError)
@@ -208,6 +208,7 @@ func getJson(urlString string, data interface{}) {
 			case net.Error:
 				wasTimeout = err.Timeout()
 			}
+
 			if wasTimeout {
 				// fmt.Println("Timeout err:", err)
 				eventReportChan <- TIMEOUT_EVENT
@@ -221,6 +222,7 @@ func getJson(urlString string, data interface{}) {
 			switch resp.StatusCode {
 			case 200:
 				gotResp = true
+
 			case 429:
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
@@ -229,12 +231,26 @@ func getJson(urlString string, data interface{}) {
 					// sleep += 1
 					time.Sleep(time.Duration(sleep))
 				}
+				got5XX = false
+				got404 = false
+
 			case 404:
 				log.Println(resp.StatusCode, "-", urlString)
-				gotResp = true
+				if got404 {
+					// Note not Fatal
+					log.Println("Two 404's on this one url: ", resp.StatusCode, " ", urlString)
+					gotResp = true
+				}
+				got404 = true
+
 			case 500, 503:
 				eventReportChan <- SERVER_ERROR_EVENT
+				if got5XX {
+					log.Fatal("Two 5XX's on this one url: ", resp.StatusCode, " ", urlString)
+				}
+				got5XX = true
 				time.Sleep(time.Duration(1 * time.Second))
+				
 			default:
 				log.Fatal("Got ", resp.StatusCode, " with: ", urlString)
 			}

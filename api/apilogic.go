@@ -144,6 +144,7 @@ func init() {
 	}
 	client = &http.Client{Transport: tr}
 
+	fmt.Println("Spawned a goroutine")
 	go func() {
 		var events [NUM_ERRORS]int
 

@@ -26,6 +26,7 @@ var cpuprofile = flag.String("prof", "", "write cpu profile to file")
 func MakeIterator(slice []interface{}) chan interface{} {
 	ch := make(chan interface{})
 
+	fmt.Println("Spawned a goroutine 2")
 	go func() {
 		for i := 0; i < len(slice); i++ { // Important to iterate by index for some reason - range doesn't work
 			ch <- slice[i]
@@ -63,6 +64,7 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 }
 
 func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), in chan []interface{}, out chan *IntSet, dirtyOut chan *IntSet, visited []*IntSet) {
+	fmt.Println("Spawned a goroutine 3")
 	go func() {
 		expandedOut := make(chan *IntSet)
 		newDirtyOut := make(chan *IntSet)
@@ -71,6 +73,7 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			input := <-in
 
 			for _, value := range input {
+				fmt.Println("Spawned a goroutine 4")
 				go func(value interface{}) {
 					expanded, dirty := mapper(value, visited)
 					expandedOut <- expanded
@@ -109,6 +112,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 
 	createSliceHandlers(NUM_INTERMEDIATES, mapper, sliceInChan, sliceOutChan, sliceDirtyOutChan, visited)
 
+	fmt.Println("Spawned a goroutine 5")
 	go func() {
 		for {
 			input := <-inChan
@@ -118,6 +122,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 			dirtySet := NewIntSet()
 
 			for _, slice := range slices {
+				fmt.Println("Spawned a goroutine 6")
 				go func(slice []interface{}) {
 					sliceInChan <- slice
 				}(slice)
@@ -145,6 +150,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited[MATCHES] = NewIntSet()
 	visited[PLAYERS] = NewIntSet()
 
+	fmt.Println("Spawned a goroutine 7")
 	go func() {
 		leagueIn, leagueOut, leagueDirty := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
 		matchIn, matchOut, matchDirty := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
@@ -223,9 +229,10 @@ func main() {
         defer pprof.StopCPUProfile()
     }
 
+	fmt.Println("Spawned a goroutine 1")
     go func() {
     	for _ = range time.Tick(5 * time.Second) {
-    		fmt.Println("Number of goroutines:", runtime.NumGoroutine())
+    		log.Println("Number of goroutines:", runtime.NumGoroutine())
     	}
     }()
 

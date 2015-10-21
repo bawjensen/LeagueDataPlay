@@ -64,7 +64,7 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), in chan []interface{}, out chan *IntSet, dirtyOut chan *IntSet, visited []*IntSet) {
 	go func() {
 		expandedOut := make(chan *IntSet)
-		dirtyOut := make(chan *IntSet)
+		newDirtyOut := make(chan *IntSet)
 	
 		for {
 			input := <-in
@@ -72,8 +72,9 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			for _, value := range input {
 				go func(value interface{}) {
 					expanded, dirty := mapper(value, visited)
+					fmt.Println("Got lowest level")
 					expandedOut <- expanded
-					dirtyOut <- dirty
+					newDirtyOut <- dirty
 				}(value)
 			}
 
@@ -82,8 +83,8 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 
 			for _ = range input {
 				expanded := <-expandedOut
-				dirty := <-dirtyOut
 				midLevelSet.Union(expanded)
+				dirty := <-newDirtyOut
 				dirtySet.Union(dirty)
 			}
 
@@ -124,8 +125,10 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 
 			for _ = range slices {
 				results := <-sliceOutChan
-				dirty := <-sliceDirtyOutChan
+				fmt.Println("Got mid level results")
 				topLevelSet.Union(results)
+				dirty := <-sliceDirtyOutChan
+				fmt.Println("Got mid level dirty")
 				dirtySet.Union(dirty)
 			}
 
@@ -174,9 +177,9 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 func search() {
 	in, out, visited := createSearchIterator()
 
-	initialSeeds := NewIntSet()
-	initialSeeds.Add(51405)
-	initialSeeds.Add(10077)
+	initialSeeds := NewIntSet(51405, 10077)
+	// initialSeeds.Add(51405)
+	// initialSeeds.Add(10077)
 
 	// fmt.Println("initialSeeds:", initialSeeds)
 

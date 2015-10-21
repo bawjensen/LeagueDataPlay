@@ -173,6 +173,7 @@ func getJson(urlString string, data interface{}) {
 		// fmt.Println("Request to:", urlString)
 
 		req, _ := http.NewRequest("GET", urlString, nil)
+		fmt.Println("Made a new request")
 		req.Header.Add("Connection", "keep-alive")
 		resp, err = client.Do(req)
 		

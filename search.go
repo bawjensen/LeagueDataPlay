@@ -71,19 +71,18 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 		newDirtyOut := make(chan *IntSet)
 	
 		for input := range in {
-			log.Println("Starting slice run", len(input))
 			for _, value := range input {
 				<-simulRequestLimiter // Wait for next available 'request slot'
 				log.Println("Took one, remaining:", len(simulRequestLimiter))
 				go func(value interface{}) {
 					expanded, dirty := mapper(value, visited)
-					log.Println("Got value from mapper")
+					// log.Println("Got value from mapper")
 					simulRequestLimiter <- true // Mark one 'request slot' as available
 					log.Println("Put one back on the list, remaining:", len(simulRequestLimiter))
 					expandedOut <- expanded
-					log.Println("Sent on expanded")
+					// log.Println("Sent on expanded")
 					newDirtyOut <- dirty
-					log.Println("Sent on dirty")
+					// log.Println("Sent on dirty")
 				}(value)
 			}
 
@@ -96,7 +95,6 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 			midLevelSet := NewIntSet()
 			dirtySet := NewIntSet()
 
-			println("Listening for results", len(input))
 			for _ = range input {
 				expanded := <-expandedOut
 				midLevelSet.Union(expanded)
@@ -142,7 +140,6 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 
 	go func() {
 		for input := range inChan {
-			log.Println("Starting search run")
 			slices := partitionByNum(prepper(input), NUM_INTERMEDIATES)
 
 			topLevelSet := NewIntSet()
@@ -157,7 +154,6 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 			for _ = range slices {
 				results := <-sliceOutChan
 				topLevelSet.Union(results)
-				log.Println("topLevelSet:", topLevelSet.Size())
 				dirty := <-sliceDirtyOutChan
 				dirtySet.Union(dirty)
 			}

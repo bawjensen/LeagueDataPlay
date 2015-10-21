@@ -30,9 +30,7 @@ func NewIntSetFromSlice(initElems []interface{}) (set *IntSet) {
 }
 
 func (self *IntSet) String() string {
-	self.RLock()
-	defer self.RUnlock()
-
+	// No need to lock, because Values() does
 	var buffer bytes.Buffer
 
 	buffer.WriteString("IntSet [ ")
@@ -69,39 +67,21 @@ func (self *IntSet) Has(elem int64) bool {
 }
 
 func (self *IntSet) Union(other *IntSet) {
-	self.Lock()
-	defer self.Unlock()
-	other.RLock()
-	defer other.RUnlock()
-
 	for elem := range other.Values() {
 		self.Add(elem)
 	}
 }
 
 func (self *IntSet) UnionWithout(other *IntSet, exclude *IntSet) {
-	self.Lock()
-	defer self.Unlock()
-	other.RLock()
-	defer other.RUnlock()
-	exclude.RLock()
-	defer exclude.RUnlock()
-
+	// No need to lock, because Values(), Has and Add do
 	for elem := range other.Values() {
 		if !exclude.Has(elem) {
 			self.Add(elem)
-		} /*else {
-			fmt.Printf("Not adding %d because it was visited\n", elem)
-		}*/
+		}
 	}
 }
 
 func (self *IntSet) IntersectInverse(other *IntSet) {
-	self.Lock()
-	defer self.Unlock()
-	other.RLock()
-	defer other.RUnlock()
-
 	for elem := range other.Values() {
 		self.Remove(elem)
 	}
@@ -115,9 +95,13 @@ func (self *IntSet) Size() int {
 }
 
 func (self *IntSet) Values() chan int64 {
+	self.RLock()
+
 	c := make(chan int64)
 
 	go func() {
+		defer self.RUnlock()
+
 		for value := range self.set {
 			c <- value
 		}

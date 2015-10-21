@@ -14,6 +14,7 @@ const (
 	NUM_INTERMEDIATES = 2 // Number of workers per searching section (e.g. league/match)
 	RATE_THROTTLE_GRANULARITY = 10.0 // Divide both time and requests by this value when throttling
 	RATE_THROTTLE_BUFFER = 0.5 // seconds
+	MAX_SIMUL_REQUESTS = 500
 
 	MATCHLIST_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/"
 	MATCH_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/match/"
@@ -42,6 +43,5 @@ const (
 var (
 	// Pseudo-Constants
 	API_KEY = os.Getenv("BAS_RIOT_KEY")
-	// WEEK_AGO = "1443653132000" // Hard-coded for now, computed later
 	MATCH_BEGIN_TIME = strconv.FormatInt((time.Now().Unix() - ONE_DAY) * 1000, 10)
 )

@@ -5,6 +5,7 @@ import(
 	"encoding/json"
 	// "errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -115,6 +116,7 @@ const (
 	REQUEST_SEND_EVENT = iota
 	REQUEST_SUCCESS_EVENT
 	TIMEOUT_EVENT
+	RESET_EVENT
 	RATE_LIMIT_EVENT
 	UNKNOWN_ERROR_EVENT
 
@@ -138,14 +140,17 @@ func highEnoughTier(tierStr string) bool {
 }
 
 func init() {
-	eventReportChan = make(chan byte)
-
+	// Set up client for HTTP gets
 	tr := &http.Transport{
 		MaxIdleConnsPerHost: 100,
 	}
 	client = &http.Client{Transport: tr}
 
-	fmt.Println("Spawned a goroutine")
+
+	// Set up event reporting chan, for nice report outputs
+	eventReportChan = make(chan byte)
+
+	// Set up event listener and reporter
 	go func() {
 		var events [NUM_ERRORS]int
 
@@ -156,8 +161,13 @@ func init() {
 
 			events[eventType]++
 
-			fmt.Printf("\rCurrently at %d (%d) requests, %d rate limits, %d timeouts, %d unknown errors",
-				events[REQUEST_SUCCESS_EVENT], events[REQUEST_SEND_EVENT], events[RATE_LIMIT_EVENT], events[TIMEOUT_EVENT], events[UNKNOWN_ERROR_EVENT])
+			fmt.Printf("\rCurrently at %d (%d) requests, %d rate limits, %d timeouts, %d resets, %d unknown errors",
+				events[REQUEST_SUCCESS_EVENT],
+				events[REQUEST_SEND_EVENT],
+				events[RATE_LIMIT_EVENT],
+				events[TIMEOUT_EVENT],
+				events[RESET_EVENT],
+				events[UNKNOWN_ERROR_EVENT])
 		}
 	}()
 }
@@ -200,17 +210,12 @@ func getJson(urlString string, data interface{}) {
 				// fmt.Println("Timeout err:", err)
 				eventReportChan <- TIMEOUT_EVENT
 			} else if wasReset {
-				// eventReportChan <- RESET_EVENT
+				eventReportChan <- RESET_EVENT
 			} else {
-				// fmt.Println("wasn't timeout, time to fatal log")
-				// log.Fatal(err)
-				// fmt.Println("Faking a fatal log, let's see what this does", err)
 				log.Println("err:", err)
 				eventReportChan <- UNKNOWN_ERROR_EVENT
 			}
 		} else {
-			defer resp.Body.Close()
-
 			switch resp.StatusCode {
 			case 200:
 				gotResp = true
@@ -220,21 +225,29 @@ func getJson(urlString string, data interface{}) {
 					eventReportChan <- RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
 					// sleep += 1
-					// fmt.Println("\rGot a 429 user-based rate limit, sleeping for", sleep)
 					time.Sleep(time.Duration(sleep))
 				}
 			case 404:
-				fmt.Println(resp.StatusCode, "-", urlString)
-				// err = errors.New(fmt.Sprintf("Issue with: %s", urlString))
+				log.Println(resp.StatusCode, "-", urlString)
 				gotResp = true
 			}
+
+			if !gotResp {
+				io.Copy(ioutil.Discard, resp.Body)
+				resp.Body.Close()
+			}
 		}
+
+
 	}
 
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(data)
 
-	_, _ = ioutil.ReadAll(resp.Body)
+	if decoder.More() {
+		io.Copy(ioutil.Discard, resp.Body)
+	}
+	resp.Body.Close()
 
 	eventReportChan <- REQUEST_SUCCESS_EVENT
 }

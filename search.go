@@ -19,9 +19,10 @@ import (
 
 // ------------------------------------ Global variables -------------------------------------------
 
-var cpuprofile = flag.String("prof", "", "write cpu profile to file")
+var simulRequestLimiter chan bool
 
 // ------------------------------------ Search logic -----------------------------------------------
+
 
 func MakeIterator(slice []interface{}) chan interface{} {
 	ch := make(chan interface{})
@@ -36,6 +37,7 @@ func MakeIterator(slice []interface{}) chan interface{} {
 
 	return ch
 }
+
 
 func partitionByNum(input []interface{}, num int) [][]interface{} {
 	inputSize := len(input)
@@ -62,19 +64,20 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 	return slices
 }
 
+
 func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), in chan []interface{}, out chan *IntSet, dirtyOut chan *IntSet, visited []*IntSet) {
 	go func() {
 		expandedOut := make(chan *IntSet)
 		newDirtyOut := make(chan *IntSet)
 	
-		for {
-			input := <-in
-
+		for input := range in {
 			for _, value := range input {
+				<-simulRequestLimiter // Wait for next available 'request slot'
 				go func(value interface{}) {
 					expanded, dirty := mapper(value, visited)
 					expandedOut <- expanded
 					newDirtyOut <- dirty
+					simulRequestLimiter <- true // Mark one 'request slot' as available
 				}(value)
 			}
 
@@ -94,11 +97,13 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), 
 	}()
 }
 
+
 func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), sliceInChan chan []interface{}, sliceOutChan chan *IntSet, sliceDirtyOutChan chan *IntSet, visited []*IntSet) {
 	for i := 0; i < num; i++ {
 		createSliceHandler(mapper, sliceInChan, sliceOutChan, sliceDirtyOutChan, visited)
 	}
 }
+
 
 func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), prepper func(*IntSet) []interface{}, visited []*IntSet) (inChan, outChan, dirtyOutChan chan *IntSet) {
 	inChan, outChan, dirtyOutChan = make(chan *IntSet), make(chan *IntSet), make(chan *IntSet)
@@ -110,8 +115,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 	createSliceHandlers(NUM_INTERMEDIATES, mapper, sliceInChan, sliceOutChan, sliceDirtyOutChan, visited)
 
 	go func() {
-		for {
-			input := <-inChan
+		for input := range inChan {
 			slices := partitionByNum(prepper(input), NUM_INTERMEDIATES)
 
 			topLevelSet := NewIntSet()
@@ -138,6 +142,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet),
 	return inChan, outChan, dirtyOutChan
 }
 
+
 func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
@@ -149,19 +154,20 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 		leagueIn, leagueOut, leagueDirty := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
 		matchIn, matchOut, matchDirty := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
 
-		for {
-			input := <-inChan
-
+		for input := range inChan {
 			// Do league first, so league can weed out players of too-low tier
 			leagueIn <- input
 			outputLeague := <-leagueOut
 			dirtyPlayers := <-leagueDirty
 
+			fmt.Printf("\n Finished with leagues, got %d new players and %d low-tier players\n", outputLeague.Size(), dirtyPlayers.Size())
 			input.IntersectInverse(dirtyPlayers) // Remove all dirty players (too low tier, etc.)
 
 			matchIn <- input
 			outputMatch := <-matchOut
 			_ = <-matchDirty // Matches can't mark dirty players
+
+			fmt.Printf("\n Finished with matches, got %d new players\n", outputMatch.Size())
 
 			outputMatch.Union(outputLeague)
 
@@ -172,12 +178,11 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	return inChan, outChan, visited
 }
 
+
 func search() {
 	in, out, visited := createSearchIterator()
 
 	initialSeeds := NewIntSet(51405, 10077)
-	// initialSeeds.Add(51405)
-	// initialSeeds.Add(10077)
 
 	// fmt.Println("initialSeeds:", initialSeeds)
 
@@ -188,7 +193,7 @@ func search() {
 	for newPlayers.Size() > 0 {
 		start = time.Now()
 
-		visited[PLAYERS].Union(newPlayers) // TODO: Remove all low-skill players?
+		visited[PLAYERS].Union(newPlayers)
 
 		fmt.Printf("\nvisited (%d)\n", visited[PLAYERS].Size())
 		fmt.Printf("newPlayers (%d)\n\n", newPlayers.Size())
@@ -200,19 +205,25 @@ func search() {
 	}
 }
 
-func trace() time.Time {
-    return time.Now()
-}
-func un(startTime time.Time) {
+
+func printTimeSince(startTime time.Time) {
     fmt.Println("Total elapsedTime:", time.Since(startTime))
 }
 
 
 func main() {
-    defer un(trace())
+	// TImer for entire program
+    defer printTimeSince(time.Now())
 
+
+    // Seed random with nanoseconds
 	rand.Seed(time.Now().UTC().UnixNano())
 
+
+	// Set up cmd line flag
+	var cpuprofile = flag.String("prof", "", "write cpu profile to file")
+
+	// Handle cmd line flag behavior
     flag.Parse()
     if *cpuprofile != "" {
         f, err := os.Create(*cpuprofile)
@@ -223,14 +234,29 @@ func main() {
         defer pprof.StopCPUProfile()
     }
 
+
+    // Initialize simultaneous request limiter
+    simulRequestLimiter = make(chan bool, MAX_SIMUL_REQUESTS)
+
+    // Set up simultaneous request limiter with full allotment
+    for i := 0; i < MAX_SIMUL_REQUESTS; i++ {
+    	simulRequestLimiter <- true
+    }
+
+
+    // Continually print to stderr the number of goroutines (monitoring for leaks)
     go func() {
     	for _ = range time.Tick(5 * time.Second) {
     		log.Println("Number of goroutines:", runtime.NumGoroutine())
     	}
     }()
 
+
+    // Set the number of parallel threads to use all CPUs
 	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU())) // Note: Setting, but returns the old for output
 	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(0))
 
+
+	// Run
 	search()
 }

@@ -245,7 +245,7 @@ func getJson(urlString string, data interface{}) {
 				}
 				got404 = true
 
-			case 500, 503:
+			case 500, 503, 504:
 				eventReportChan <- SERVER_ERROR_EVENT
 				if num5XX > LIMIT_5XX {
 					log.Fatal(LIMIT_5XX, " 5XX's on this one url: ", resp.StatusCode, " ", urlString)

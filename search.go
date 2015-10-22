@@ -182,9 +182,7 @@ func search() {
 		visited[PLAYERS].Union(newPlayers)
 		newPlayers = <-out
 
-		if newPlayers.Has(51405) {
-			panic("newPlayers should never have a visited player")
-		}
+		log.Println("Number of goroutines:", runtime.NumGoroutine())
 
 		fmt.Printf("\n\nIteration: %v\n", time.Since(start))
 	}
@@ -222,7 +220,7 @@ func main() {
 
     // Continually print to stderr the number of goroutines (monitoring for leaks)
     go func() {
-    	for _ = range time.Tick(5 * time.Second) {
+    	for _ = range time.Tick(2 * time.Second) {
     		log.Println("Number of goroutines:", runtime.NumGoroutine())
     	}
     }()

@@ -24,7 +24,7 @@ import (
 	. "github.com/bawjensen/dataplay/utility"
 )
 
-// ------------------------------------ Globals ----------------------------------------
+// ----------------------------------------- Globals -----------------------------------------------
 
 var client *http.Client
 const (
@@ -32,7 +32,7 @@ const (
 	SLEEP_5XX = 5
 )
 
-// ------------------------------------ Helper logic -----------------------------------
+// ----------------------------------------- Helper logic ------------------------------------------
 
 var tierChecker map[string]bool = map[string]bool{
 	"CHALLENGER": 	true,
@@ -56,7 +56,7 @@ func init() {
 	client = &http.Client{Transport: tr}
 }
 
-// ------------------------------------ General logic ----------------------------------
+// ----------------------------------------- General logic -----------------------------------------
 
 func getJson(urlString string, data interface{}) {
 	var resp *http.Response
@@ -158,7 +158,7 @@ func getJson(urlString string, data interface{}) {
 	eventReportChan <- REQUEST_SUCCESS_EVENT
 }
 
-// ------------------------------------ Match logic ------------------------------------
+// ----------------------------------------- Match logic -------------------------------------------
 
 func InputPrepperMatch(players *IntSet) (sliced []interface{}) {
 	sliced = make([]interface{}, 0, players.Size())
@@ -224,7 +224,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 	return expandedPlayers
 }
 
-// ------------------------------------ League logic -----------------------------------
+// ----------------------------------------- League logic ------------------------------------------
 
 func InputPrepperLeague(players *IntSet) (sliced []interface{}) {
 	numSlices := int(math.Ceil(float64(players.Size()) / float64(PLAYERS_PER_LEAGUE_CALL)))

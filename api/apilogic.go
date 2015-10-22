@@ -170,7 +170,7 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(200 * time.Millisecond) {
-			fmt.Printf("\rAt %d (%d) req's, %d(%d) r-lim, , %d serv-err, %d t/o, %d resets, %d ? errors",
+			fmt.Printf("\rAt %d (%d) req's, %d (%d) rate-lim, , %d serv-err, %d t/o, %d resets, %d other errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
 				events[USER_RATE_LIMIT_EVENT],
@@ -240,6 +240,9 @@ func getJson(urlString string, data interface{}) {
 					time.Sleep(time.Duration(sleep))
 				} else {
 					eventReportChan <- SERV_RATE_LIMIT_EVENT
+					if len(resp.Header["X-Rate-Limit-Type"]) > 0 {
+						log.Println("Service 429?:", resp.Header)
+					}
 				}
 				got404 = false // If a 429 follows a 404, don't mark the 404 as 'two consequtive'
 

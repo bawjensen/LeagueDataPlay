@@ -182,7 +182,7 @@ func search() {
 		visited[PLAYERS].Union(newPlayers)
 		newPlayers = <-out
 
-		log.Println("Number of goroutines:", runtime.NumGoroutine())
+		log.Println("Number of goroutines after iteration:", runtime.NumGoroutine())
 
 		fmt.Printf("\n\nIteration: %v\n", time.Since(start))
 	}

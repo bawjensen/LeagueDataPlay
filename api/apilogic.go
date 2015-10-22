@@ -30,7 +30,8 @@ import(
 var client *http.Client
 var eventReportChan chan byte
 const (
-	LIMIT_5XX = 3
+	LIMIT_5XX = 5
+	SLEEP_5XX = 2
 )
 
 // ------------------------------------ API response types -----------------------------
@@ -251,7 +252,7 @@ func getJson(urlString string, data interface{}) {
 					log.Fatal(LIMIT_5XX, " 5XX's on this one url: ", resp.StatusCode, " ", urlString)
 				}
 				num5XX++
-				time.Sleep(time.Duration(2 * time.Second))
+				time.Sleep(time.Duration(SLEEP_5XX * time.Second))
 
 			default:
 				log.Fatal("Got ", resp.StatusCode, " with: ", urlString)

@@ -94,20 +94,22 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []i
 }
 
 
-func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) *IntSet, sliceInChan chan []interface{}, sliceOutChan chan *IntSet, visited []*IntSet) {
+func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) *IntSet, visited []*IntSet) (sliceInChan chan []interface{}, sliceOutChan chan *IntSet) {
+	sliceInChan = make(chan []interface{}) // Every request funneled into one 'please' channel
+	sliceOutChan = make(chan *IntSet) // Every response funneled into one 'finished' channel
+
 	for i := 0; i < num; i++ {
 		createSliceHandler(mapper, sliceInChan, sliceOutChan, visited)
 	}
+
+	return sliceInChan, sliceOutChan
 }
 
 
 func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
 	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
-	sliceInChan := make(chan []interface{}) // Every request funneled into one 'please' channel
-	sliceOutChan := make(chan *IntSet) // Every response funneled into one 'finished' channel
-
-	createSliceHandlers(NUM_INTERMEDIATES, mapper, sliceInChan, sliceOutChan, visited)
+	sliceInChan, sliceOutChan := createSliceHandlers(NUM_INTERMEDIATES, mapper, visited)
 
 	go func() {
 		for input := range inChan {

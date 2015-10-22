@@ -1,10 +1,10 @@
 package api
 
-import(
+import (
 	// "crypto/tls"
 	"encoding/json"
 	// "errors"
-	"fmt"
+	// "fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -22,111 +22,14 @@ import(
 	"github.com/bawjensen/dataplay/ratethrottle"
 
 	. "github.com/bawjensen/dataplay/utility"
-	// . "github.com/bawjensen/dataplay/constants"
 )
 
 // ------------------------------------ Globals ----------------------------------------
 
 var client *http.Client
-var eventReportChan chan byte
 const (
 	LIMIT_5XX = 5
 	SLEEP_5XX = 5
-)
-
-// ------------------------------------ API response types -----------------------------
-
-type MatchlistResponse struct {
-	Matches		[]struct {
-		// Champion	int64
-		// Lane		string
-		MatchId		int64
-		// PlatformId	string
-		Queue		string
-		Region		string
-		// Role		string
-		// Season		string
-		// Timestamp	int64
-	}
-	// EndIndex	int 
-	// StartIndex	int 
-	// TotalGames	int
-}
-
-type MatchResponse struct {
-	// MapId					int
-	// MatchCreation			int64
-	// MatchDuration			int64
-	// MatchId					int64
-	// MatchMode				string
-	// MatchType				string
-	// MatchVersion			string
-	ParticipantIdentities	[]struct {
-		// ParticipantId			int
-		Player					struct {
-			// MatchHistoryUri			string
-			// ProfileIcon				int
-			SummonerId				int64
-			// SummonerName			string
-		}
-	}
-	// Participants			[]struct {
-	// 	ChampionId					int
-	// 	HighestAchievedSeasonTier	string
-	// 	Masteries					[]Mastery
-	// 	ParticipantId				int
-	// 	Runes						[]Rune
-	// 	Spell1Id					int
-	// 	Spell2Id					int
-	// 	Stats						ParticipantStats
-	// 	TeamId						int
-	// 	Timeline					ParticipantTimeline
-	// }
-	// PlatformId				string
-	QueueType				string
-	// Region					string
-	// Season					string
-	// Teams					[]Team
-	// Timeline				Timeline
-}
-
-type LeagueResponse map[string][]LeagueDto
-type LeagueDto struct {
-	Entries				[]struct {
-	// 	Division			string
-	// 	IsFreshBlood		bool
-	// 	IsHotStreak			bool
-	// 	IsInactive			bool
-	// 	IsVeteran			bool
-	// 	LeaguePoints		int
-	// 	Losses				int
-	// 	MiniSeries			struct {
-	// 		Losses				int
-	// 		Progress			string
-	// 		Target				int
-	// 		Wins				int
-	// 	}
-		PlayerOrTeamId		string
-	// 	PlayerOrTeamName 	string
-	// 	Wins				int
-	}
-	// Name				string
-	// ParticipantId		string
-	Queue				string
-	Tier				string
-}
-
-const (
-	REQUEST_SEND_EVENT = iota
-	REQUEST_SUCCESS_EVENT
-	TIMEOUT_EVENT
-	RESET_EVENT
-	SERV_RATE_LIMIT_EVENT
-	USER_RATE_LIMIT_EVENT
-	UNKNOWN_ERROR_EVENT
-	SERVER_ERROR_EVENT
-
-	NUM_ERRORS // As long as it's at the end, will correctly reflect the number of "enums" in this const block
 )
 
 // ------------------------------------ Helper logic -----------------------------------
@@ -148,39 +51,9 @@ func highEnoughTier(tierStr string) bool {
 func init() {
 	// Set up client for HTTP gets
 	tr := &http.Transport{
-		MaxIdleConnsPerHost: 100,
+		MaxIdleConnsPerHost: MAX_SIMUL_REQUESTS,
 	}
 	client = &http.Client{Transport: tr}
-
-
-	// Set up event reporting chan, for nice report outputs
-	eventReportChan = make(chan byte)
-
-	// Set up event listener and reporter
-	var events [NUM_ERRORS]int
-
-	go func() {
-		var eventType byte
-
-		for {
-			eventType = <-eventReportChan
-			events[eventType]++
-		}
-	}()
-
-	go func() {
-		for _ = range time.Tick(200 * time.Millisecond) {
-			fmt.Printf("\rAt %d (%d) req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
-				events[REQUEST_SUCCESS_EVENT],
-				events[REQUEST_SEND_EVENT],
-				events[USER_RATE_LIMIT_EVENT],
-				events[SERV_RATE_LIMIT_EVENT],
-				events[SERVER_ERROR_EVENT],
-				events[TIMEOUT_EVENT],
-				events[RESET_EVENT],
-				events[UNKNOWN_ERROR_EVENT])
-		}
-	}()
 }
 
 // ------------------------------------ General logic ----------------------------------
@@ -347,8 +220,6 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 		results := <-ch
 		expandedPlayers.Union(results)
 	}
-
-	// fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
 	
 	return expandedPlayers
 }
@@ -373,7 +244,6 @@ func InputPrepperLeague(players *IntSet) (sliced []interface{}) {
 			slice = make([]int64, 0, PLAYERS_PER_LEAGUE_CALL)
 		}
 
-		// slice[j] = value
 		slice = append(slice, value)
 		j++
 	}
@@ -422,8 +292,6 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 			}
 		}
 	}
-
-	// fmt.Printf("Got %d from league\n", expandedPlayers.Size())
 
 	return expandedPlayers
 }

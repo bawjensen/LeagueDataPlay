@@ -238,8 +238,7 @@ func getJson(urlString string, data interface{}) {
 					eventReportChan <- USER_RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
 					time.Sleep(time.Duration(sleep))
-				}
-				else {
+				} else {
 					eventReportChan <- SERV_RATE_LIMIT_EVENT
 				}
 				got404 = false // If a 429 follows a 404, don't mark the 404 as 'two consequtive'

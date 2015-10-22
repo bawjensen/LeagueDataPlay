@@ -121,7 +121,8 @@ const (
 	REQUEST_SUCCESS_EVENT
 	TIMEOUT_EVENT
 	RESET_EVENT
-	RATE_LIMIT_EVENT
+	SERV_RATE_LIMIT_EVENT
+	USER_RATE_LIMIT_EVENT
 	UNKNOWN_ERROR_EVENT
 	SERVER_ERROR_EVENT
 
@@ -169,10 +170,11 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(200 * time.Millisecond) {
-			fmt.Printf("\rAt %d (%d) req's, %d r-lim, , %d serv-err, %d t/o, %d resets, %d ? errors",
+			fmt.Printf("\rAt %d (%d) req's, %d(%d) r-lim, , %d serv-err, %d t/o, %d resets, %d ? errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
-				events[RATE_LIMIT_EVENT],
+				events[USER_RATE_LIMIT_EVENT],
+				events[SERV_RATE_LIMIT_EVENT],
 				events[SERVER_ERROR_EVENT],
 				events[TIMEOUT_EVENT],
 				events[RESET_EVENT],
@@ -233,12 +235,14 @@ func getJson(urlString string, data interface{}) {
 			case 429:
 				sleepTimeSlice := resp.Header["Retry-After"]
 				if len(sleepTimeSlice) > 0 {
-					eventReportChan <- RATE_LIMIT_EVENT
+					eventReportChan <- USER_RATE_LIMIT_EVENT
 					sleep, _ := strconv.Atoi(sleepTimeSlice[0])
-					// sleep += 1
 					time.Sleep(time.Duration(sleep))
 				}
-				got404 = false
+				else {
+					eventReportChan <- SERV_RATE_LIMIT_EVENT
+				}
+				got404 = false // If a 429 follows a 404, don't mark the 404 as 'two consequtive'
 
 			case 404:
 				log.Println(resp.StatusCode, "-", urlString)

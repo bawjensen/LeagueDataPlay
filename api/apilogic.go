@@ -170,7 +170,7 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(200 * time.Millisecond) {
-			fmt.Printf("\rAt %d (%d) req's, %d (%d) rate-lim, , %d serv-err, %d t/o, %d resets, %d other errors",
+			fmt.Printf("\rAt %d (%d) req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
 				events[USER_RATE_LIMIT_EVENT],
@@ -272,8 +272,6 @@ func getJson(urlString string, data interface{}) {
 				resp.Body.Close()
 			}
 		}
-
-
 	}
 
 	decoder := json.NewDecoder(resp.Body)

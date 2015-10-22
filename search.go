@@ -32,7 +32,6 @@ func MakeIterator(slice []interface{}) chan interface{} {
 		for i := 0; i < len(slice); i++ { // Important to iterate by index for some reason - range doesn't work
 			ch <- slice[i]
 		}
-
 		close(ch)
 	}()
 

@@ -156,16 +156,19 @@ func init() {
 	eventReportChan = make(chan byte)
 
 	// Set up event listener and reporter
-	go func() {
-		var events [NUM_ERRORS]int
+	var events [NUM_ERRORS]int
 
+	go func() {
 		var eventType byte
 
 		for {
 			eventType = <-eventReportChan
-
 			events[eventType]++
+		}
+	}()
 
+	go func() {
+		for _ = range time.Tick(200 * time.Millisecond) {
 			fmt.Printf("\rAt %d (%d) req's, %d r-lim, , %d serv-err, %d t/o, %d resets, %d ? errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],

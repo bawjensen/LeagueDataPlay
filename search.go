@@ -19,10 +19,11 @@ import (
 
 // ------------------------------------ Global variables -------------------------------------------
 
-var simulRequestLimiter chan bool
+var simulRequestLimiter chan signal
 
-// ------------------------------------ Search logic -----------------------------------------------
+// ------------------------------------ Helper logic -----------------------------------------------
 
+type signal struct{}
 
 func MakeIterator(slice []interface{}) chan interface{} {
 	ch := make(chan interface{})
@@ -64,6 +65,8 @@ func partitionByNum(input []interface{}, num int) [][]interface{} {
 	return slices
 }
 
+// ------------------------------------ Search logic -----------------------------------------------
+
 
 func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited []*IntSet) {
 	go func() {
@@ -74,7 +77,7 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []i
 				<-simulRequestLimiter // Wait for next available 'request slot'
 				go func(value interface{}) {
 					expanded := mapper(value, visited)
-					simulRequestLimiter <- true // Mark one 'request slot' as available
+					simulRequestLimiter <- signal{} // Mark one 'request slot' as available
 					expandedOut <- expanded
 				}(value)
 			}
@@ -223,11 +226,11 @@ func main() {
 
 
     // Initialize simultaneous request limiter
-    simulRequestLimiter = make(chan bool, MAX_SIMUL_REQUESTS)
+    simulRequestLimiter = make(chan signal, MAX_SIMUL_REQUESTS)
 
     // Set up simultaneous request limiter with full allotment
     for i := 0; i < MAX_SIMUL_REQUESTS; i++ {
-    	simulRequestLimiter <- true
+    	simulRequestLimiter <- signal{}
     }
 
 

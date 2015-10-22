@@ -39,20 +39,22 @@ func (self *ringBuffer) setCurrent(newTime time.Time) {
 
 // ------------------------------------- Rate Throttle Logic ---------------------------------------
 
+type signal struct{}
+
 type rateThrottle struct {
 	// rate 			int
 	// ratePer 	time.Duration
 	fillInterval	time.Duration
 	// curr 			int
 	// last_check 		time.Time
-	wait 			chan bool
+	wait 			chan signal
 }
 
 // func newRateThrottle() (self rateThrottle) {
 // 	size := int(REQUEST_CAP / RATE_THROTTLE_GRANULARITY)
 // 	time := ((REQUEST_PERIOD + RATE_THROTTLE_BUFFER) * 1000 * time.Millisecond) / RATE_THROTTLE_GRANULARITY
 // 	fmt.Printf("Initializing rate throttler with size %d and time %v\n", size, time)
-// 	self = rateThrottle{buffer: newRingBuffer(int(size), time), wait: make(chan bool)}
+// 	self = rateThrottle{buffer: newRingBuffer(int(size), time), wait: make(chan signal)}
 // 	return
 // }
 
@@ -64,7 +66,7 @@ func newRateThrottle() (self rateThrottle) {
 
 	self = rateThrottle{
 		fillInterval: 	fillInterval,
-		wait: 			make(chan bool, bufferSize),
+		wait: 			make(chan signal, bufferSize),
 	}
 
 	return
@@ -88,7 +90,7 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(instance.fillInterval) {
-			instance.wait <- true
+			instance.wait <- signal{}
 		}
 	}()
 

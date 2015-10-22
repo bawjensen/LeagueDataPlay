@@ -19,11 +19,7 @@ import (
 
 // ------------------------------------ Global variables -------------------------------------------
 
-var simulRequestLimiter chan signal
-
 // ------------------------------------ Helper logic -----------------------------------------------
-
-type signal struct{}
 
 func MakeIterator(slice []interface{}) chan interface{} {
 	ch := make(chan interface{})
@@ -73,10 +69,8 @@ func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []i
 	
 		for input := range in {
 			for _, value := range input {
-				<-simulRequestLimiter // Wait for next available 'request slot'
 				go func(value interface{}) {
 					expanded := mapper(value, visited)
-					simulRequestLimiter <- signal{} // Mark one 'request slot' as available
 					expandedOut <- expanded
 				}(value)
 			}
@@ -223,15 +217,6 @@ func main() {
         }
         pprof.StartCPUProfile(f)
         defer pprof.StopCPUProfile()
-    }
-
-
-    // Initialize simultaneous request limiter
-    simulRequestLimiter = make(chan signal, MAX_SIMUL_REQUESTS)
-
-    // Set up simultaneous request limiter with full allotment
-    for i := 0; i < MAX_SIMUL_REQUESTS; i++ {
-    	simulRequestLimiter <- signal{}
     }
 
 

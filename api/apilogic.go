@@ -62,6 +62,8 @@ func getJson(urlString string, data interface{}) {
 	var resp *http.Response
 	var err error
 
+	<-simulRequestLimiter // Wait for next available 'request slot'
+
 	got404 := false
 	num5XX := 0
 	gotResp := false
@@ -156,6 +158,7 @@ func getJson(urlString string, data interface{}) {
 	resp.Body.Close()
 
 	eventReportChan <- REQUEST_SUCCESS_EVENT
+	simulRequestLimiter <- signal{} // Mark one 'request slot' as available
 }
 
 // ----------------------------------------- Match logic -------------------------------------------

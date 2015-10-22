@@ -140,21 +140,21 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited[PLAYERS] = NewIntSet()
 
 	go func() {
-		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
+		// leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
 		matchIn, matchOut := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
 
 		for input := range inChan {
 			// Do league first, so league can weed out players of too-low tier
-			leagueIn <- input
+			// leagueIn <- input
 			matchIn <- input
 
-			outputLeague := <-leagueOut
+			// outputLeague := <-leagueOut
 			outputMatch := <-matchOut
 
 			// fmt.Printf("\n Leagues: got %d new players\n", outputLeague.Size())
 			// fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())
 
-			outputMatch.Union(outputLeague)
+			// outputMatch.Union(outputLeague)
 
 			outChan <- outputMatch
 		}

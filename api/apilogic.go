@@ -31,7 +31,7 @@ var client *http.Client
 var eventReportChan chan byte
 const (
 	LIMIT_5XX = 5
-	SLEEP_5XX = 2
+	SLEEP_5XX = 5
 )
 
 // ------------------------------------ API response types -----------------------------

@@ -297,11 +297,10 @@ func createMatchlistUrl(player int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet, removedPlayers *IntSet) {
+func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
 	player := iPlayer.(int64)
 
 	expandedPlayers = NewIntSet()
-	removedPlayers = NewIntSet()
 
 	var matchlistData MatchlistResponse
 	matchlistUrl := createMatchlistUrl(player)
@@ -343,7 +342,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 
 	// fmt.Printf("Got %d from %d matches\n", expandedPlayers.Size(), len(matchlistData.Matches))
 	
-	return expandedPlayers, removedPlayers
+	return expandedPlayers
 }
 
 // ------------------------------------ League logic -----------------------------------
@@ -388,7 +387,7 @@ func createLeagueUrl(players []int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet, removedPlayers *IntSet) {
+func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
 	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse
@@ -397,7 +396,6 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 	getJson(leagueUrl, &leagueData)
 
 	expandedPlayers = NewIntSet()
-	removedPlayers = NewIntSet()
 
 	for playerId := range leagueData {
 		for _, leagueDto := range leagueData[playerId] {
@@ -409,17 +407,17 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 							expandedPlayers.Add(id)
 						}
 					}
-				} else {
+				} /*else {
 					id, _ := strconv.ParseInt(playerId, 10, 64)
 					removedPlayers.Add(id)
-				}
+				}*/
 			}
 		}
 	}
 
 	// fmt.Printf("Got %d from league\n", expandedPlayers.Size())
 
-	return expandedPlayers, removedPlayers
+	return expandedPlayers
 }
 
 func RandomSummonerId() int {

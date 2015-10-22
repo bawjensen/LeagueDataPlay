@@ -1,6 +1,6 @@
 package api
 
-// ------------------------------------ API response types -----------------------------
+// ----------------------------------------- API response types ------------------------------------
 
 type MatchlistResponse struct {
     Matches     []struct {

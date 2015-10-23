@@ -210,8 +210,14 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 							if !visited[PLAYERS].Has(participant.Player.SummonerId) {
 								newIds.Add(participant.Player.SummonerId)
 							}
+							else {
+								eventReportChan <- REQUEST_AVOIDED_EVENT
+							}
 						}
 					}
+				}
+				else {
+					eventReportChan <- REQUEST_AVOIDED_EVENT
 				}
 
 				ch <- newIds

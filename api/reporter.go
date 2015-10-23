@@ -8,6 +8,9 @@ import (
 // -------------------------------------- Global variables -----------------------------------------
 
 var eventReportChan chan byte
+const (
+	REPORT_INTERVAL = 500 * time.Millisecond
+)
 
 // -------------------------------------- Reporter logic -------------------------------------------
 
@@ -45,7 +48,7 @@ func init() {
 	}()
 
 	go func() {
-		for _ = range time.Tick(200 * time.Millisecond) {
+		for _ = range time.Tick(REPORT_INTERVAL) {
 			fmt.Printf("\rAt %d (%d) req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],

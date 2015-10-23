@@ -59,7 +59,7 @@ type rateThrottle struct {
 // }
 
 func newRateThrottle() (self rateThrottle) {
-	fillInterval := (REQUEST_PERIOD * time.Second) / REQUEST_CAP
+	fillInterval := (REQUEST_PERIOD + RATE_THROTTLE_BUFFER) / REQUEST_CAP
 	bufferSize := int(REQUEST_CAP / RATE_THROTTLE_GRANULARITY)
 
 	fmt.Printf("Initializing rate throttler with interval %v and buffer %d\n", fillInterval, bufferSize)

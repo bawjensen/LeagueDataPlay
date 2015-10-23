@@ -13,7 +13,7 @@ const (
 	// Configurable
 	NUM_INTERMEDIATES = 2 // Number of workers per searching section (e.g. league/match)
 	RATE_THROTTLE_GRANULARITY = 10.0 // Divide both time and requests by this value when throttling
-	RATE_THROTTLE_BUFFER = 0.5 // seconds
+	RATE_THROTTLE_BUFFER = 500 * time.Millisecond // seconds
 	MAX_SIMUL_REQUESTS = 500
 
 	MATCHLIST_PREFIX = "https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/"
@@ -23,7 +23,7 @@ const (
 
 	// Determined by API
 	REQUEST_CAP = 3000 // requests
-	REQUEST_PERIOD = 10 // seconds
+	REQUEST_PERIOD = 10 * time.Second // seconds
 
 	PLAYERS_PER_LEAGUE_CALL = 10
 	ONE_HOUR = 			 60 * 60

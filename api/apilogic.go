@@ -238,7 +238,7 @@ func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{
 	j := 0
 	var slice []int64
 	for value := range players.Values() {
-		// if !visited[LEAGUE_BY_PLAYERS].Has(value) {
+		if !visited[LEAGUE_BY_PLAYERS].Has(value) {
 			if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, insert and continue
 				// sliced[i] = slice
 				sliced = append(sliced, slice)
@@ -254,7 +254,7 @@ func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{
 		}/* else {
 			fmt.Println("Ignoring:", value, "because their league was visited already")
 		}*/
-	// }
+	}
 
 	// Leftover
 	// sliced[i] = slice
@@ -288,7 +288,7 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 				if highEnoughTier(leagueDto.Tier) {
 					for _, entry := range leagueDto.Entries {
 						id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
-						// visited[LEAGUE_BY_PLAYERS].Add(id)
+						visited[LEAGUE_BY_PLAYERS].Add(id)
 						if !visited[PLAYERS].Has(id) {
 							expandedPlayers.Add(id)
 						}

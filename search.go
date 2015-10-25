@@ -137,7 +137,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited = make([]*IntSet, NUM_VISITED_SETS, NUM_VISITED_SETS)
 	visited[MATCHES] = NewIntSet()
 	visited[PLAYERS] = NewIntSet()
-	// visited[LEAGUE_BY_PLAYERS] = NewIntSet()
+	visited[LEAGUE_BY_PLAYERS] = NewIntSet()
 
 	go func() {
 		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)

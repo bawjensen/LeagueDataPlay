@@ -207,13 +207,9 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 						for _, participant := range matchData.ParticipantIdentities {
 							if !visited[PLAYERS].Has(participant.Player.SummonerId) {
 								newIds.Add(participant.Player.SummonerId)
-							} else {
-								eventReportChan <- REQUEST_AVOIDED_EVENT
 							}
 						}
 					}
-				} else {
-					eventReportChan <- REQUEST_AVOIDED_EVENT
 				}
 
 				ch <- newIds
@@ -251,8 +247,6 @@ func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{
 
 			slice = append(slice, value)
 			j++
-		} else {
-			eventReportChan <- REQUEST_AVOIDED_EVENT
 		}
 	}
 

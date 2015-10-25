@@ -9,7 +9,8 @@ import (
 
 var eventReportChan chan byte
 const (
-	REPORT_INTERVAL = 500 * time.Millisecond
+	// REPORT_INTERVAL = 500 * time.Millisecond
+	REPORT_INTERVAL = 1 * time.Second
 )
 
 // -------------------------------------- Reporter logic -------------------------------------------
@@ -17,7 +18,7 @@ const (
 const (
 	REQUEST_SEND_EVENT = iota // Sent a request
 	REQUEST_SUCCESS_EVENT 	// Request went just fine
-	REQUEST_AVOIDED_EVENT 	// Any time a request might have been sent, but didn't have to be
+	// REQUEST_AVOIDED_EVENT 	// Any time a request might have been sent, but didn't have to be
 
 	TIMEOUT_EVENT 			// Connection timeout event, caused by (?)
 	RESET_EVENT 			// Connection reset event, caused by (?)
@@ -49,10 +50,10 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(REPORT_INTERVAL) {
-			fmt.Printf("\rAt %d (%d, %d) req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
+			fmt.Printf("\rAt %d/%d req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
-				events[REQUEST_AVOIDED_EVENT],
+				// events[REQUEST_AVOIDED_EVENT],
 				events[USER_RATE_LIMIT_EVENT],
 				events[SERV_RATE_LIMIT_EVENT],
 				events[SERVER_ERROR_EVENT],

@@ -2,6 +2,7 @@ package ratethrottle
 
 import (
 	"fmt"
+	"log"
 	"time"
 	. "github.com/bawjensen/dataplay/utility"
 )

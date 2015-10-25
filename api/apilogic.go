@@ -299,7 +299,3 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 
 	return expandedPlayers
 }
-
-func RandomSummonerId() int {
-	return rand.Intn(1e5)
-}

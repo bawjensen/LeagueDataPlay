@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
-	"math/rand"
+	// "math/rand"
 	"net"
 	"net/http"
 	"net/url"

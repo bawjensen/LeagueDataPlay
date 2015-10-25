@@ -16,18 +16,20 @@ type IntSet struct {
 func NewIntSet(initElems ...int64) (set *IntSet) {
 	set = &IntSet{ set: make(map[int64]bool) }
 	for _, elem := range initElems {
-		set.set[elem] = true
+		// set.set[elem] = true
+		set.Add(elem)
 	}
 	return set
 }
 
-func NewIntSetFromSlice(initElems []interface{}) (set *IntSet) {
-	set = &IntSet{ set: make(map[int64]bool) }
-	for _, elem := range initElems {
-		set.set[elem.(int64)] = true
-	}
-	return set
-}
+// func NewIntSetFromSlice(initElems []interface{}) (set *IntSet) {
+// 	set = &IntSet{ set: make(map[int64]bool) }
+// 	for _, elem := range initElems {
+// 		// set.set[elem.(int64)] = true
+// 		set.Add(elem)
+// 	}
+// 	return set
+// }
 
 func (self *IntSet) String() string {
 	// No need to lock, because Values() does

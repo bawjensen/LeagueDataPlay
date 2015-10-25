@@ -251,9 +251,9 @@ func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{
 
 			slice = append(slice, value)
 			j++
-		} else {
+		}/* else {
 			fmt.Println("Ignoring:", value, "because their league was visited already")
-		}
+		}*/
 	}
 
 	// Leftover

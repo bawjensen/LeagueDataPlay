@@ -49,9 +49,10 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(REPORT_INTERVAL) {
-			fmt.Printf("\rAt %d (%d) req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
+			fmt.Printf("\rAt %d (%d, %d) req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
+				events[REQUEST_AVOIDED_EVENT],
 				events[USER_RATE_LIMIT_EVENT],
 				events[SERV_RATE_LIMIT_EVENT],
 				events[SERVER_ERROR_EVENT],

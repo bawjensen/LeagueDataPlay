@@ -9,6 +9,7 @@ import (
 // ------------------------------------- Global Variables ------------------------------------------
 
 var instance *rateThrottle
+var sleepTime time.Duration
 
 // ------------------------------------- Ring Buffer Logic -----------------------------------------
 
@@ -75,7 +76,15 @@ func newRateThrottle() (self rateThrottle) {
 // ------------------------------------- Package behavior Logic ------------------------------------
 
 func Wait() {
+	if (sleepTime != 0) {
+		time.Sleep(sleepTime)
+		sleepTime = 0
+	}
 	<-instance.wait
+}
+
+func Sleep(dur time.Duration) {
+	sleepTime = dur
 }
 
 // ------------------------------------- Package Init Logic ----------------------------------------

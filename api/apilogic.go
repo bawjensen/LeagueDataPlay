@@ -30,6 +30,7 @@ var client *http.Client
 const (
 	LIMIT_5XX = 5 // How many 5XX's we will allow before reacting
 	SLEEP_5XX = 5 * time.Second // How long to sleep after every 5XX, before retrying request
+	TIMEOUT_5XX = 30 * time.Second // How to long to take a timeout of everything after getting too many 5XX's
 )
 
 // ----------------------------------------- Helper logic ------------------------------------------
@@ -133,7 +134,8 @@ func getJson(urlString string, data interface{}) {
 			case 500, 503, 504:
 				eventReportChan <- SERVER_ERROR_EVENT
 				if num5XX > LIMIT_5XX {
-					log.Fatal(LIMIT_5XX, " 5XX's on this one url: ", resp.StatusCode, " ", urlString)
+					log.Println(LIMIT_5XX, " 5XX's on this one url (", resp.StatusCode, "): ", urlString)
+					ratethrottle.Sleep(TIMEOUT_5XX)
 				}
 				num5XX++
 				time.Sleep(SLEEP_5XX)

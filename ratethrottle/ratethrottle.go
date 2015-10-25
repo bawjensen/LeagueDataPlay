@@ -77,6 +77,7 @@ func newRateThrottle() (self rateThrottle) {
 
 func Wait() {
 	if (sleepTime != 0) {
+		log.Println("Sleeping all requests for", sleepTime)
 		time.Sleep(sleepTime)
 		sleepTime = 0
 	}
@@ -91,7 +92,7 @@ func Sleep(dur time.Duration) {
 
 func init() {
 	if instance != nil {
-		fmt.Println("instance wasn't nil - How is this possible?")
+		log.Fatal("instance wasn't nil - How is this possible?")
 	}
 
 	instance = new(rateThrottle) 	// Allocate an actual space for non-nil rateThrottle

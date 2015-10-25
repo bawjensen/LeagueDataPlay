@@ -83,7 +83,7 @@ func (self *IntSet) UnionWithout(other *IntSet, exclude *IntSet) {
 	}
 }
 
-func (self *IntSet) IntersectInverse(other *IntSet) {
+func (self *IntSet) Subtract(other *IntSet) {
 	for elem := range other.Values() {
 		self.Remove(elem)
 	}

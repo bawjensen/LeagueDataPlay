@@ -120,8 +120,8 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper fu
 			}
 
 			for _ = range prepped {
-				fmt.Println("searchSet.Size():", searchSet.Size())
 				searchSet.Union(<-subOutChan)
+				fmt.Println("\n\nsearchSet.Size():", searchSet.Size(), "\n")
 			}
 
 			outChan <- searchSet

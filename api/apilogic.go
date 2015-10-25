@@ -28,8 +28,8 @@ import (
 
 var client *http.Client
 const (
-	LIMIT_5XX = 5
-	SLEEP_5XX = 5
+	LIMIT_5XX = 5 // How many 5XX's we will allow before reacting
+	SLEEP_5XX = 5 * time.Second // How long to sleep after every 5XX, before retrying request
 )
 
 // ----------------------------------------- Helper logic ------------------------------------------
@@ -136,7 +136,7 @@ func getJson(urlString string, data interface{}) {
 					log.Fatal(LIMIT_5XX, " 5XX's on this one url: ", resp.StatusCode, " ", urlString)
 				}
 				num5XX++
-				time.Sleep(time.Duration(SLEEP_5XX * time.Second))
+				time.Sleep(SLEEP_5XX)
 
 			default:
 				log.Fatal("Got ", resp.StatusCode, " with: ", urlString)

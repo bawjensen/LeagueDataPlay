@@ -4,7 +4,7 @@ import (
 	// "crypto/tls"
 	"encoding/json"
 	// "errors"
-	// "fmt"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -251,6 +251,8 @@ func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{
 
 			slice = append(slice, value)
 			j++
+		} else {
+			fmt.Println("Ignoring:", value, "because their league was visited already")
 		}
 	}
 
@@ -286,6 +288,7 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 				if highEnoughTier(leagueDto.Tier) {
 					for _, entry := range leagueDto.Entries {
 						id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
+						visited[LEAGUE_BY_PLAYERS].Add(id)
 						if !visited[PLAYERS].Has(id) {
 							expandedPlayers.Add(id)
 						}

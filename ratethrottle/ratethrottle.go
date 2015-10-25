@@ -44,21 +44,9 @@ func (self *ringBuffer) setCurrent(newTime time.Time) {
 type signal struct{}
 
 type rateThrottle struct {
-	// rate 			int
-	// ratePer 	time.Duration
 	fillInterval	time.Duration
-	// curr 			int
-	// last_check 		time.Time
 	wait 			chan signal
 }
-
-// func newRateThrottle() (self rateThrottle) {
-// 	size := int(REQUEST_CAP / RATE_THROTTLE_GRANULARITY)
-// 	time := ((REQUEST_PERIOD + RATE_THROTTLE_BUFFER) * 1000 * time.Millisecond) / RATE_THROTTLE_GRANULARITY
-// 	fmt.Printf("Initializing rate throttler with size %d and time %v\n", size, time)
-// 	self = rateThrottle{buffer: newRingBuffer(int(size), time), wait: make(chan signal)}
-// 	return
-// }
 
 func newRateThrottle() (self rateThrottle) {
 	fillInterval := (REQUEST_PERIOD + RATE_THROTTLE_BUFFER) / REQUEST_CAP
@@ -104,19 +92,4 @@ func init() {
 			instance.wait <- signal{}
 		}
 	}()
-
-	// go func() {
-	// 	for {
-	// 		instance.wait <- true
-
-	// 		instance.buffer.setCurrent(time.Now())
-	// 		instance.buffer.increment()
-
-	// 		lastTime := instance.buffer.current()
-	// 		if timeSince := time.Since(lastTime); (!lastTime.IsZero()) && (timeSince < instance.buffer.period) {
-	// 			// fmt.Printf("At %v, time is %v, sleeping for %v\n", instance.buffer.curr, instance.buffer.ring[instance.buffer.curr].Second(), instance.buffer.period - timeSince)
-	// 			time.Sleep(instance.buffer.period - timeSince)
-	// 		}
-	// 	}
-	// }()
 }

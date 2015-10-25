@@ -28,7 +28,7 @@ import (
 
 var client *http.Client
 const (
-	LIMIT_5XX = 5 // How many 5XX's we will allow before reacting
+	LIMIT_5XX = 3 // How many 5XX's we will allow before reacting
 	SLEEP_5XX = 5 * time.Second // How long to sleep after every 5XX, before retrying request
 	TIMEOUT_5XX = 30 * time.Second // How to long to take a timeout of everything after getting too many 5XX's
 )

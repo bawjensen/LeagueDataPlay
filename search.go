@@ -109,7 +109,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper fu
 		for input := range inChan {
 			prepped := prepper(input, visited)
 
-			// log.Println("prepped:", prepped)
+			fmt.Println("prepped:", prepped)
 
 			searchSet := NewIntSet()
 
@@ -120,6 +120,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper fu
 			}
 
 			for _ = range prepped {
+				fmt.Println("searchSet.Size():", searchSet.Size())
 				searchSet.Union(<-subOutChan)
 			}
 

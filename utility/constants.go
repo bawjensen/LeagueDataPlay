@@ -33,8 +33,9 @@ const (
 
 // Used, for the moment, solely for indexing into the visited sets
 const (
-	PLAYERS = iota
-	MATCHES
+	PLAYERS = iota // Player ids that have been visited
+	MATCHES // Match ids that have been visited
+	LEAGUE_BY_PLAYERS // Players whose league has been been visited - since leagues are not queried by their id directly
 	// LEAGUES
 
 	NUM_VISITED_SETS

@@ -163,7 +163,7 @@ func getJson(urlString string, data interface{}) {
 
 // ----------------------------------------- Match logic -------------------------------------------
 
-func InputPrepperMatch(players *IntSet) (sliced []interface{}) {
+func InputPrepperMatch(players *IntSet, visited []*IntSet) (sliced []interface{}) {
 	sliced = make([]interface{}, 0, players.Size())
 	for value := range players.Values() {
 		sliced = append(sliced, value)
@@ -187,8 +187,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 	expandedPlayers = NewIntSet()
 
 	var matchlistData MatchlistResponse
-	matchlistUrl := createMatchlistUrl(player)
-	getJson(matchlistUrl, &matchlistData)
+	getJson(createMatchlistUrl(player), &matchlistData)
 
 	ch := make(chan *IntSet)
 	activeMatches := 0
@@ -202,8 +201,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 					visited[MATCHES].Add(matchId)
 
 					var matchData MatchResponse
-					matchUrl := createMatchUrl(matchId)
-					getJson(matchUrl, &matchData)
+					getJson(createMatchUrl(matchId), &matchData)
 
 					if matchData.QueueType == DESIRED_QUEUE {
 						for _, participant := range matchData.ParticipantIdentities {
@@ -233,30 +231,32 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 
 // ----------------------------------------- League logic ------------------------------------------
 
-func InputPrepperLeague(players *IntSet) (sliced []interface{}) {
-	numSlices := int(math.Ceil(float64(players.Size()) / float64(PLAYERS_PER_LEAGUE_CALL)))
-	sliced = make([]interface{}, numSlices, numSlices)
+func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{}) {
+	numMaxSlices := int(math.Ceil(float64(players.Size()) / float64(PLAYERS_PER_LEAGUE_CALL)))
+	sliced = make([]interface{}, 0, numMaxSlices)
 
-	i := 0
 	j := 0
 	var slice []int64
 	for value := range players.Values() {
-		if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, insert and continue
-			sliced[i] = slice
-			j = 0
-			i++
-		}
+		if !visited[LEAGUE_BY_PLAYERS].Has(value) {
+			if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, insert and continue
+				// sliced[i] = slice
+				sliced = append(sliced, slice)
+				j = 0
+			}
 
-		if j == 0 { // Starting new slices
-			slice = make([]int64, 0, PLAYERS_PER_LEAGUE_CALL)
-		}
+			if j == 0 { // Starting new slices
+				slice = make([]int64, 0, PLAYERS_PER_LEAGUE_CALL)
+			}
 
-		slice = append(slice, value)
-		j++
+			slice = append(slice, value)
+			j++
+		}
 	}
 
 	// Leftover
-	sliced[i] = slice
+	// sliced[i] = slice
+	sliced = append(sliced, slice)
 
 	return sliced
 }
@@ -276,9 +276,7 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse
-
-	leagueUrl := createLeagueUrl(players)
-	getJson(leagueUrl, &leagueData)
+	getJson(createLeagueUrl(players), &leagueData)
 
 	expandedPlayers = NewIntSet()
 

@@ -21,108 +21,107 @@ import (
 
 // ------------------------------------ Helper logic -----------------------------------------------
 
-func MakeIterator(slice []interface{}) chan interface{} {
-	ch := make(chan interface{})
+// func MakeIterator(slice []interface{}) chan interface{} {
+// 	ch := make(chan interface{})
 
-	go func() {
-		for i := 0; i < len(slice); i++ { // Important to iterate by index for some reason - range doesn't work
-			ch <- slice[i]
-		}
-		close(ch)
-	}()
+// 	go func() {
+// 		for i := 0; i < len(slice); i++ { // Important to iterate by index for some reason - range doesn't work
+// 			ch <- slice[i]
+// 		}
+// 		close(ch)
+// 	}()
 
-	return ch
-}
+// 	return ch
+// }
 
 
-func partitionByNum(input []interface{}, num int) [][]interface{} {
-	inputSize := len(input)
-	sliceSize := inputSize / num
-	numOverloadedSlices := inputSize % num // number of slices with an extra element
+// func partitionByNum(input []interface{}, num int) [][]interface{} {
+// 	inputSize := len(input)
+// 	sliceSize := inputSize / num
+// 	numOverloadedSlices := inputSize % num // number of slices with an extra element
 
-	slices := make([][]interface{}, num, num)
+// 	slices := make([][]interface{}, num, num)
 
-	iterator := MakeIterator(input)
+// 	iterator := MakeIterator(input)
 
-	for i := 0; i < num; i++ {
-		numInSlice := sliceSize
-		if i < numOverloadedSlices {
-			numInSlice += 1
-		}
+// 	for i := 0; i < num; i++ {
+// 		numInSlice := sliceSize
+// 		if i < numOverloadedSlices {
+// 			numInSlice += 1
+// 		}
 
-		slices[i] = make([]interface{}, numInSlice, numInSlice)
+// 		slices[i] = make([]interface{}, numInSlice, numInSlice)
 
-		for j := 0; j < numInSlice; j++ {
-			slices[i][j] = <-iterator
-		}
-	}
+// 		for j := 0; j < numInSlice; j++ {
+// 			slices[i][j] = <-iterator
+// 		}
+// 	}
 
-	return slices
-}
+// 	return slices
+// }
 
 // ------------------------------------ Search logic -----------------------------------------------
 
 
-func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited []*IntSet) {
-	go func() {
-		expandedOut := make(chan *IntSet)
+// func createSliceHandler(mapper func(interface{}, []*IntSet) *IntSet, in chan []interface{}, out chan *IntSet, visited []*IntSet) {
+// 	go func() {
+// 		expandedOut := make(chan *IntSet)
 	
-		for input := range in {
-			for _, value := range input {
-				go func(value interface{}) {
-					expanded := mapper(value, visited)
-					expandedOut <- expanded
-				}(value)
-			}
+// 		for input := range in {
+// 			for _, value := range input {
+// 				go func(value interface{}) {
+// 					expanded := mapper(value, visited)
+// 					expandedOut <- expanded
+// 				}(value)
+// 			}
 
-			midLevelSet := NewIntSet()
+// 			midLevelSet := NewIntSet()
 
-			for _ = range input {
-				expanded := <-expandedOut
-				midLevelSet.Union(expanded)
-			}
+// 			for _ = range input {
+// 				expanded := <-expandedOut
+// 				midLevelSet.Union(expanded)
+// 			}
 
-			out <- midLevelSet
-		}
-	}()
-}
-
-
-func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) *IntSet, visited []*IntSet) (sliceInChan chan []interface{}, sliceOutChan chan *IntSet) {
-	sliceInChan = make(chan []interface{}) // Every request funneled into one 'please' channel
-	sliceOutChan = make(chan *IntSet) // Every response funneled into one 'finished' channel
-
-	for i := 0; i < num; i++ {
-		createSliceHandler(mapper, sliceInChan, sliceOutChan, visited)
-	}
-
-	return sliceInChan, sliceOutChan
-}
+// 			out <- midLevelSet
+// 		}
+// 	}()
+// }
 
 
-func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
+// func createSliceHandlers(num int, mapper func(interface{}, []*IntSet) *IntSet, visited []*IntSet) (sliceInChan chan []interface{}, sliceOutChan chan *IntSet) {
+// 	sliceInChan = make(chan []interface{}) // Every request funneled into one 'please' channel
+// 	sliceOutChan = make(chan *IntSet) // Every response funneled into one 'finished' channel
+
+// 	for i := 0; i < num; i++ {
+// 		createSliceHandler(mapper, sliceInChan, sliceOutChan, visited)
+// 	}
+
+// 	return sliceInChan, sliceOutChan
+// }
+
+
+func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet, []*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
 	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
-	sliceInChan, sliceOutChan := createSliceHandlers(NUM_INTERMEDIATES, mapper, visited)
-
 	go func() {
+		subOutChan := make(chan *IntSet)
+
 		for input := range inChan {
-			slices := partitionByNum(prepper(input), NUM_INTERMEDIATES)
+			prepped := prepper(input, visited)
 
-			topLevelSet := NewIntSet()
+			searchSet := NewIntSet()
 
-			for _, slice := range slices {
-				go func(slice []interface{}) {
-					sliceInChan <- slice
-				}(slice)
+			for _, mapperInput := range prepped {
+				go func() {
+					subOutChan <- mapper(mapperInput, visited)
+				}()
 			}
 
-			for _ = range slices {
-				results := <-sliceOutChan
-				topLevelSet.Union(results)
+			for _ = range prepped {
+				searchSet.Union(<-subOutChan)
 			}
 
-			outChan <- topLevelSet
+			outChan <- searchSet
 		}
 	}()
 
@@ -136,6 +135,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited = make([]*IntSet, NUM_VISITED_SETS, NUM_VISITED_SETS)
 	visited[MATCHES] = NewIntSet()
 	visited[PLAYERS] = NewIntSet()
+	visited[LEAGUE_BY_PLAYERS] = NewIntSet()
 
 	go func() {
 		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
@@ -178,7 +178,6 @@ func search() {
 		fmt.Printf("newPlayers (%d)\n\n", newPlayers.Size())
 
 		in <- newPlayers
-
 		visited[PLAYERS].Union(newPlayers)
 		newPlayers = <-out
 

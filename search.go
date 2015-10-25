@@ -109,6 +109,8 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper fu
 		for input := range inChan {
 			prepped := prepper(input, visited)
 
+			log.Println("prepped:", prepped)
+
 			searchSet := NewIntSet()
 
 			for _, mapperInput := range prepped {
@@ -142,7 +144,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 		matchIn, matchOut := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
 
 		for input := range inChan {
-			// Do league first, so league can weed out players of too-low tier
+			// Do league first, so league can weed out players of too-low tier?
 			leagueIn <- input
 			matchIn <- input
 

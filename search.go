@@ -114,7 +114,7 @@ func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper fu
 			searchSet := NewIntSet()
 
 			for _, mapperInput := range prepped {
-				go func(mapperInput []interface{}) {
+				go func(mapperInput interface{}) {
 					subOutChan <- mapper(mapperInput, visited)
 				}(mapperInput)
 			}

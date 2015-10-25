@@ -141,14 +141,6 @@ func main() {
     }
 
 
-    // Continually print to stderr the number of goroutines (monitoring for leaks)
-    go func() {
-    	for _ = range time.Tick(2 * time.Second) {
-    		log.Println("Number of goroutines:", runtime.NumGoroutine())
-    	}
-    }()
-
-
     // Set the number of parallel threads to use all CPUs
 	fmt.Println("Default GOMAXPROCS:", runtime.GOMAXPROCS(runtime.NumCPU())) // Note: Setting, but returns the old for output
 	fmt.Println("Running with GOMAXPROCS:", runtime.GOMAXPROCS(0))

@@ -50,7 +50,7 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(REPORT_INTERVAL) {
-			fmt.Printf("\rAt %d/%d req's, %d (%d) rate-lim, %d serv-err, %d t/o, %d resets, %d other errors",
+			fmt.Printf("\r%d/%d req's, %d (%d) 429, %d 5XX, %d t/o, %d resets, %d other err, %d goroutines",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
 				// events[REQUEST_AVOIDED_EVENT],
@@ -59,7 +59,8 @@ func init() {
 				events[SERVER_ERROR_EVENT],
 				events[TIMEOUT_EVENT],
 				events[RESET_EVENT],
-				events[UNKNOWN_ERROR_EVENT])
+				events[UNKNOWN_ERROR_EVENT],
+				runtime.NumGoroutine())
 		}
 	}()
 }

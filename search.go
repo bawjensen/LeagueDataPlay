@@ -151,8 +151,8 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 			outputLeague := <-leagueOut
 			outputMatch := <-matchOut
 
-			// fmt.Printf("\n Leagues: got %d new players\n", outputLeague.Size())
-			// fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())
+			fmt.Printf("\n Leagues: got %d new players\n", outputLeague.Size())
+			fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())
 
 			outputMatch.Union(outputLeague)
 
@@ -185,7 +185,7 @@ func search() {
 
 		log.Println("Number of goroutines after iteration:", runtime.NumGoroutine())
 
-		fmt.Printf("\n\nIteration: %v\n", time.Since(start))
+		fmt.Printf("\nIteration: %v\n", time.Since(start))
 	}
 }
 

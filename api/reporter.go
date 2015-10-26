@@ -51,7 +51,8 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(REPORT_INTERVAL) {
-			fmt.Printf("\rReq: %d/%d, 429: %d/%d, 5XX: %d, T/O: %d, Resets: %d, Err: %d, Goroutines: %d",
+			// Set default sizes on the more common event outputs
+			fmt.Printf("\rReq: %7d/%7d, 429: %d/%d, 5XX: %d, T/O: %d, Resets: %d, Err: %d, Goroutines: %7d",
 				events[REQUEST_SUCCESS_EVENT],
 				events[REQUEST_SEND_EVENT],
 				// events[REQUEST_AVOIDED_EVENT],

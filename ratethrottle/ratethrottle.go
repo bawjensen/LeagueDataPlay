@@ -11,7 +11,6 @@ import (
 
 var instance *rateThrottle
 var sleepTime time.Duration
-var mutex sync.Mutex
 
 // ------------------------------------- Ring Buffer Logic -----------------------------------------
 

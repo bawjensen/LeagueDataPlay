@@ -123,7 +123,7 @@ func getJson(urlString string, data interface{}) {
 				got404 = false // If a 429 follows a 404, don't mark the 404 as 'two consequtive'
 
 			case 404:
-				log.Println(resp.StatusCode, "-", urlString)
+				// log.Println(resp.StatusCode, "-", urlString)
 				if got404 {
 					// Note not Fatal
 					log.Println("Two 404's on this one url: ", resp.StatusCode, " ", urlString)
@@ -139,6 +139,10 @@ func getJson(urlString string, data interface{}) {
 				}
 				num5XX++
 				time.Sleep(SLEEP_5XX)
+
+			case 422:
+				log.Println("422 response:", err)
+				eventReportChan <- UNKNOWN_ERROR_EVENT
 
 			default:
 				log.Fatal("Got ", resp.StatusCode, " with: ", urlString)

@@ -11,6 +11,7 @@ import (
 
 var instance *rateThrottle
 var sleepTime time.Duration
+var mutex sync.Mutex
 
 // ------------------------------------- Ring Buffer Logic -----------------------------------------
 
@@ -65,11 +66,6 @@ func newRateThrottle() (self rateThrottle) {
 // ------------------------------------- Package behavior Logic ------------------------------------
 
 func Wait() {
-	if (sleepTime != 0) {
-		log.Println("Sleeping all requests for", sleepTime)
-		time.Sleep(sleepTime)
-		sleepTime = 0
-	}
 	<-instance.wait
 }
 
@@ -89,6 +85,11 @@ func init() {
 
 	go func() {
 		for _ = range time.Tick(instance.fillInterval) {
+			if (sleepTime != 0) {
+				log.Println("Sleeping all requests for", sleepTime)
+				time.Sleep(sleepTime)
+				sleepTime = 0
+			}
 			instance.wait <- signal{}
 		}
 	}()

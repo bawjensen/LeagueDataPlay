@@ -45,7 +45,7 @@ var tierChecker map[string]bool = map[string]bool{
 	"BRONZE": 		false,
 }
 func highEnoughTier(tierStr string) bool {
-	_, ok := tierChecker[tierStr]
+	ok := tierChecker[tierStr]
 	return ok
 }
 
@@ -289,6 +289,7 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 						}
 					}
 				} else {
+					log.Fatal("Wasn't highEnoughTier")
 					id, _ := strconv.ParseInt(playerId, 10, 64)
 					rejectedPlayers.Add(id)
 				}

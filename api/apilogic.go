@@ -134,7 +134,7 @@ func getJson(urlString string, data interface{}) {
 			case 500, 503, 504:
 				eventReportChan <- SERVER_ERROR_EVENT
 				if num5XX > LIMIT_5XX {
-					log.Println(LIMIT_5XX, " 5XX's on this one url (", resp.StatusCode, "): ", urlString)
+					log.Println(LIMIT_5XX, "5XX's on this one url (", resp.StatusCode, "):", urlString)
 					ratethrottle.Sleep(TIMEOUT_5XX)
 				}
 				num5XX++
@@ -165,6 +165,10 @@ func getJson(urlString string, data interface{}) {
 
 	eventReportChan <- REQUEST_SUCCESS_EVENT
 	simulRequestLimiter <- signal{} // Mark one 'request slot' as available
+
+	if l := len(simulRequestLimiter); (l > (MAX_SIMUL_REQUESTS / 2)) {
+		log.Println("A lot of open slots:", l)
+	}
 }
 
 // ----------------------------------------- Match logic -------------------------------------------

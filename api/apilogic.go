@@ -38,8 +38,8 @@ const (
 var tierChecker map[string]bool = map[string]bool{
 	"CHALLENGER": 	true,
 	"MASTER": 		true,
-	"DIAMOND": 		true,
-	"PLATINUM": 	true,
+	"DIAMOND": 		false,
+	"PLATINUM": 	false,
 	"GOLD": 		false,
 	"SILVER": 		false,
 	"BRONZE": 		false,

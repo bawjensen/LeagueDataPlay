@@ -165,10 +165,6 @@ func getJson(urlString string, data interface{}) {
 
 	eventReportChan <- REQUEST_SUCCESS_EVENT
 	simulRequestLimiter <- signal{} // Mark one 'request slot' as available
-
-	if l := len(simulRequestLimiter); (l > (MAX_SIMUL_REQUESTS / 2)) {
-		log.Println("A lot of open slots:", l)
-	}
 }
 
 // ----------------------------------------- Match logic -------------------------------------------

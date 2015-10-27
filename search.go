@@ -81,7 +81,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 
 			input.Subtract(rejectLeague)
 
-			fmt.Printf("input.Size() down to: %d", input.Size())
+			fmt.Printf("input.Size() down to: %d\n", input.Size())
 
 			matchIn <- input
 			outputMatch := <-matchOut

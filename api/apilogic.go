@@ -65,17 +65,13 @@ func getJson(urlString string, data interface{}) {
 
 	<-simulRequestLimiter // Wait for next available 'request slot'
 
-	got404 := false
 	num5XX := 0
+	got404 := false
 	gotResp := false
 	for !gotResp {
 		ratethrottle.Wait()
 
 		eventReportChan <- REQUEST_SEND_EVENT
-
-		// req, _ := http.NewRequest("GET", urlString, nil)
-		// req.Header.Add("Connection", "keep-alive")
-		// resp, err = client.Do(req)
 		
 		resp, err = client.Get(urlString)
 
@@ -95,7 +91,6 @@ func getJson(urlString string, data interface{}) {
 			}
 
 			if wasTimeout {
-				// fmt.Println("Timeout err:", err)
 				eventReportChan <- TIMEOUT_EVENT
 			} else if wasReset {
 				eventReportChan <- RESET_EVENT
@@ -123,11 +118,9 @@ func getJson(urlString string, data interface{}) {
 				got404 = false // If a 429 follows a 404, don't mark the 404 as 'two consequtive'
 
 			case 404:
-				// log.Println(resp.StatusCode, "-", urlString)
 				if got404 {
-					// Note not Fatal
-					log.Println("Two 404's on this one url: ", resp.StatusCode, " ", urlString)
-					gotResp = true
+					log.Println("2 404's on this one url:", resp.StatusCode, urlString)
+					gotResp = true // Resp doesn't have to be a good resp
 				}
 				got404 = true
 

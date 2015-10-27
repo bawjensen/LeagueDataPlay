@@ -133,8 +133,8 @@ func getJson(urlString string, data interface{}) {
 				num5XX++
 				time.Sleep(SLEEP_5XX)
 
-			case 422:
-				log.Println("422 response:", err)
+			case 422, 408:
+				log.Println(resp.StatusCode, " response:", err)
 				eventReportChan <- UNKNOWN_ERROR_EVENT
 
 			default:

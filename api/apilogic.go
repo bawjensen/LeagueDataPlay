@@ -277,22 +277,28 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 	expandedPlayers = NewIntSet()
 	rejectedPlayers = NewIntSet()
 
-	for playerId := range leagueData {
-		for _, leagueDto := range leagueData[playerId] {
-			if leagueDto.Queue == DESIRED_QUEUE {
-				if highEnoughTier(leagueDto.Tier) {
-					for _, entry := range leagueDto.Entries {
-						id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
-						visited[LEAGUE_BY_PLAYERS].Add(id)
-						if !visited[PLAYERS].Has(id) {
-							expandedPlayers.Add(id)
+	for _, playerId := range players {
+		entry, ok := leagueData[strconv.FormatInt(playerId, 10)]
+
+		if ok {
+			for _, leagueDto := range entry {
+				if leagueDto.Queue == DESIRED_QUEUE {
+					if highEnoughTier(leagueDto.Tier) {
+						for _, entry := range leagueDto.Entries {
+							id, _ := strconv.ParseInt(entry.PlayerOrTeamId, 10, 64)
+							visited[LEAGUE_BY_PLAYERS].Add(id)
+							if !visited[PLAYERS].Has(id) {
+								expandedPlayers.Add(id)
+							}
 						}
+					} else {
+						// id, _ := strconv.ParseInt(playerId, 10, 64)
+						rejectedPlayers.Add(playerId)
 					}
-				} else {
-					id, _ := strconv.ParseInt(playerId, 10, 64)
-					rejectedPlayers.Add(id)
 				}
 			}
+		} else {
+			rejectedPlayers.Add(playerId)
 		}
 	}
 

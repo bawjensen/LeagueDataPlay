@@ -234,7 +234,7 @@ func InputPrepperLeague(players *IntSet, visited []*IntSet) (sliced []interface{
 	var slice []int64
 	for value := range players.Values() {
 		if !visited[LEAGUE_BY_PLAYERS].Has(value) {
-			if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, insert and continue
+			if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, append and continue
 				// sliced[i] = slice
 				sliced = append(sliced, slice)
 				j = 0

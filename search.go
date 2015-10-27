@@ -83,6 +83,10 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 
 			fmt.Printf("input.Size() down to: %d\n", input.Size())
 
+			if input.Size() < 5 {
+				fmt.Println(input)
+			}
+
 			matchIn <- input
 			outputMatch := <-matchOut
 			_ = <-matchReject

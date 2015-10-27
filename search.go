@@ -98,12 +98,12 @@ func search() {
 	for newPlayers.Size() > 0 {
 		start = time.Now()
 
+		visited[PLAYERS].Union(newPlayers)
+
 		fmt.Printf("\nvisited[PLAYERS]:           %d\n", 	visited[PLAYERS].Size())
 		fmt.Printf(  "visited[MATCHES]:           %d\n", 	visited[MATCHES].Size())
 		fmt.Printf(  "visited[LEAGUE_BY_PLAYERS]: %d\n", 	visited[LEAGUE_BY_PLAYERS].Size())
 		fmt.Printf(  "newPlayers:                 %d\n\n", 	newPlayers.Size())
-
-		visited[PLAYERS].Union(newPlayers)
 
 		in <- newPlayers
 		newPlayers = <-out

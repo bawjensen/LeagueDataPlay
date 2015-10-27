@@ -77,10 +77,10 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 			outputLeague := <-leagueOut
 			rejectLeague := <-leagueReject
 
-			fmt.Printf("\nGot all league responses (%d), rejecting: %d\n", rejectLeague.Size())
+			fmt.Printf("\nGot all league responses (%d), rejecting: %d\n", outputLeague.Size(), rejectLeague.Size())
 
 			input.Subtract(rejectLeague)
-			
+
 			fmt.Printf("input.Size() down to: %d", input.Size())
 
 			matchIn <- input

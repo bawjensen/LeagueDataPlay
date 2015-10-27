@@ -101,8 +101,9 @@ func search() {
 		fmt.Printf("\nvisited (%d)\n", visited[PLAYERS].Size())
 		fmt.Printf("newPlayers (%d)\n\n", newPlayers.Size())
 
-		in <- newPlayers
 		visited[PLAYERS].Union(newPlayers)
+
+		in <- newPlayers
 		newPlayers = <-out
 
 		log.Println("Number of goroutines after iteration:", runtime.NumGoroutine())

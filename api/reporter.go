@@ -35,7 +35,7 @@ const (
 
 func init() {
 	// Set up event reporting chan, for nice report outputs
-	eventReportChan = make(chan byte)
+	eventReportChan = make(chan byte, 1000) // with a buffer, so it's doesn't block for traffic spikes
 
 	// Set up event listener and reporter
 	var events [NUM_ERRORS]int

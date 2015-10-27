@@ -180,10 +180,11 @@ func createMatchlistUrl(player int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
+func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers, rejectedPlayers *IntSet) {
 	player := iPlayer.(int64)
 
 	expandedPlayers = NewIntSet()
+	rejectedPlayers = NewIntSet() // Unused for now
 
 	var matchlistData MatchlistResponse
 	getJson(createMatchlistUrl(player), &matchlistData)
@@ -221,7 +222,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers 
 		expandedPlayers.Union(results)
 	}
 	
-	return expandedPlayers
+	return expandedPlayers, rejectedPlayers
 }
 
 // ----------------------------------------- League logic ------------------------------------------
@@ -267,13 +268,14 @@ func createLeagueUrl(players []int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
+func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers, rejectedPlayers *IntSet) {
 	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse
 	getJson(createLeagueUrl(players), &leagueData)
 
 	expandedPlayers = NewIntSet()
+	rejectedPlayers = NewIntSet()
 
 	for playerId := range leagueData {
 		for _, leagueDto := range leagueData[playerId] {
@@ -286,13 +288,13 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 							expandedPlayers.Add(id)
 						}
 					}
-				} /*else {
+				} else {
 					id, _ := strconv.ParseInt(playerId, 10, 64)
-					removedPlayers.Add(id)
-				}*/
+					rejectedPlayers.Add(id)
+				}
 			}
 		}
 	}
 
-	return expandedPlayers
+	return expandedPlayers, rejectedPlayers
 }

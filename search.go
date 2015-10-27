@@ -24,32 +24,38 @@ import (
 // ------------------------------------ Search logic -----------------------------------------------
 
 
-func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet, []*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
-	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
+func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), prepper func(*IntSet, []*IntSet) []interface{}, visited []*IntSet) (inChan, outChan, rejectOutChan chan *IntSet) {
+	inChan, outChan, rejectOutChan = make(chan *IntSet), make(chan *IntSet), make(chan *IntSet)
 
 	go func() {
-		subOutChan := make(chan *IntSet)
+		resultsChan := make(chan *IntSet)
+		rejectsChan := make(chan *IntSet)
 
 		for input := range inChan {
 			prepped := prepper(input, visited)
 
 			searchSet := NewIntSet()
+			rejectSet := NewIntSet()
 
 			for _, mapperInput := range prepped {
 				go func(mapperInput interface{}) {
-					subOutChan <- mapper(mapperInput, visited)
+					results, rejects := mapper(mapperInput, visited)
+					resultsChan <- results
+					rejectsChan <- rejects
 				}(mapperInput)
 			}
 
 			for _ = range prepped {
-				searchSet.Union(<-subOutChan)
+				searchSet.Union(<-resultsChan)
+				rejectSet.Union(<-rejectsChan)
 			}
 
 			outChan <- searchSet
+			rejectOutChan <- rejectSet
 		}
 	}()
 
-	return inChan, outChan
+	return inChan, outChan, rejectOutChan
 }
 
 
@@ -62,16 +68,22 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited[LEAGUE_BY_PLAYERS] = NewIntSet()
 
 	go func() {
-		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
-		matchIn, matchOut := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
+		leagueIn, leagueOut, leagueReject := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
+		matchIn, matchOut, matchReject := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
 
 		for input := range inChan {
 			// Do league first, so league can weed out players of too-low tier?
 			leagueIn <- input
-			matchIn <- input
-
 			outputLeague := <-leagueOut
+			rejectLeague := <-leagueReject
+
+			fmt.Printf("\nGot all league responses, rejecting: %d\n", rejectLeague.Size())
+
+			input.Subtract(rejectLeague)
+
+			matchIn <- input
 			outputMatch := <-matchOut
+			_ = <-matchReject
 
 			// fmt.Printf("\n Leagues: got %d new players\n", outputLeague.Size())
 			// fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())

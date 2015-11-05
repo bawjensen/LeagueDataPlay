@@ -24,38 +24,32 @@ import (
 // ------------------------------------ Search logic -----------------------------------------------
 
 
-func createSearchHandler(mapper func(interface{}, []*IntSet) (*IntSet, *IntSet), prepper func(*IntSet, []*IntSet) []interface{}, visited []*IntSet) (inChan, outChan, rejectOutChan chan *IntSet) {
-	inChan, outChan, rejectOutChan = make(chan *IntSet), make(chan *IntSet), make(chan *IntSet)
+func createSearchHandler(mapper func(interface{}, []*IntSet) *IntSet, prepper func(*IntSet, []*IntSet) []interface{}, visited []*IntSet) (inChan, outChan chan *IntSet) {
+	inChan, outChan = make(chan *IntSet), make(chan *IntSet)
 
 	go func() {
 		resultsChan := make(chan *IntSet)
-		rejectsChan := make(chan *IntSet)
 
 		for input := range inChan {
 			prepped := prepper(input, visited)
 
 			searchSet := NewIntSet()
-			rejectSet := NewIntSet()
 
 			for _, mapperInput := range prepped {
 				go func(mapperInput interface{}) {
-					results, rejects := mapper(mapperInput, visited)
-					resultsChan <- results
-					rejectsChan <- rejects
+					resultsChan <- mapper(mapperInput, visited)
 				}(mapperInput)
 			}
 
 			for _ = range prepped {
 				searchSet.Union(<-resultsChan)
-				rejectSet.Union(<-rejectsChan)
 			}
 
 			outChan <- searchSet
-			rejectOutChan <- rejectSet
 		}
 	}()
 
-	return inChan, outChan, rejectOutChan
+	return inChan, outChan
 }
 
 
@@ -68,28 +62,43 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 	visited[LEAGUE_BY_PLAYERS] = NewIntSet()
 
 	go func() {
-		leagueIn, leagueOut, leagueReject := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
-		matchIn, matchOut, matchReject := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
+		leagueIn, leagueOut := createSearchHandler(SearchPlayerLeague, InputPrepperLeague, visited)
+		matchIn, matchOut := createSearchHandler(SearchPlayerMatch, InputPrepperMatch, visited)
+		rejectIn, rejectOut := createSearchHandler(SearchPlayerReject, InputPrepperReject, visited)
 
 		for input := range inChan {
+
+			/*
+			TODO: Get leagues and matches at the same time, then weed out all low-tier players with league/{id}/entry
+			*/
+
 			// Do league first, so league can weed out players of too-low tier?
 			leagueIn <- input
-			outputLeague := <-leagueOut
-			rejectLeague := <-leagueReject
-
-			input.Subtract(rejectLeague)
-
-			fmt.Printf("\nGot all league responses (%d), rejecting %d, reduced input to %d\n",
-				outputLeague.Size(), rejectLeague.Size(), input.Size())
-
 			matchIn <- input
+
 			outputMatch := <-matchOut
-			_ = <-matchReject
+
+			fmt.Printf("\nGot match output (%d), sending into reject\n", outputMatch)
+
+			// Reject all low-tier people gotten from matches
+			rejectIn <- outputMatch
+			outputReject := <-rejectOut
+			outputMatch.Subtract(outputReject)
+			fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject, outputMatch)
+
+			outputLeague := <-leagueOut
+			fmt.Printf("\nGot league output (%d)\n", outputLeague)
+
+			// fmt.Printf("\nGot all league responses (%d), rejecting %d, reduced input to %d\n",
+			// 	outputLeague.Size(), rejectLeague.Size(), input.Size())
+
+
 
 			// fmt.Printf("\n Leagues: got %d new players\n", outputLeague.Size())
 			// fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())
 
 			outputMatch.Union(outputLeague)
+			fmt.Printf("\nGot total unioned output (%d)\n", outputMatch)
 
 			outChan <- outputMatch
 		}

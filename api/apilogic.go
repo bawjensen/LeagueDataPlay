@@ -180,11 +180,10 @@ func createMatchlistUrl(player int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers, rejectedPlayers *IntSet) {
+func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
 	player := iPlayer.(int64)
 
 	expandedPlayers = NewIntSet()
-	rejectedPlayers = NewIntSet() // Unused for now
 
 	var matchlistData MatchlistResponse
 	getJson(createMatchlistUrl(player), &matchlistData)
@@ -222,7 +221,7 @@ func SearchPlayerMatch(iPlayer interface{}, visited []*IntSet) (expandedPlayers,
 		expandedPlayers.Union(results)
 	}
 	
-	return expandedPlayers, rejectedPlayers
+	return expandedPlayers
 }
 
 // ----------------------------------------- League logic ------------------------------------------
@@ -268,14 +267,13 @@ func createLeagueUrl(players []int64) string {
 	return strings.Join(parts, "")
 }
 
-func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers, rejectedPlayers *IntSet) {
+func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
 	players := iPlayers.([]int64)
 
 	var leagueData LeagueResponse
 	getJson(createLeagueUrl(players), &leagueData)
 
 	expandedPlayers = NewIntSet()
-	rejectedPlayers = NewIntSet()
 
 	for _, playerId := range players {
 		entry, ok := leagueData[strconv.FormatInt(playerId, 10)]
@@ -291,16 +289,77 @@ func SearchPlayerLeague(iPlayers interface{}, visited []*IntSet) (expandedPlayer
 								expandedPlayers.Add(id)
 							}
 						}
-					} else {
-						// id, _ := strconv.ParseInt(playerId, 10, 64)
-						rejectedPlayers.Add(playerId)
+					}
+				}
+			}
+		}
+	}
+
+	return expandedPlayers
+}
+
+// ----------------------------------------- Reject logic ------------------------------------------
+
+func InputPrepperReject(players *IntSet, visited []*IntSet) (sliced []interface{}) {
+	numMaxSlices := int(math.Ceil(float64(players.Size()) / float64(PLAYERS_PER_LEAGUE_CALL)))
+	sliced = make([]interface{}, 0, numMaxSlices)
+
+	j := 0
+	var slice []int64
+	for value := range players.Values() {
+		if j >= PLAYERS_PER_LEAGUE_CALL { // If you've finished a slice, append and continue
+			sliced = append(sliced, slice)
+			j = 0
+		}
+
+		if j == 0 { // Starting new slices
+			slice = make([]int64, 0, PLAYERS_PER_LEAGUE_CALL)
+		}
+
+		slice = append(slice, value)
+		j++
+	}
+
+	// Leftover
+	sliced = append(sliced, slice)
+
+	return sliced
+}
+
+func createRejectUrl(players []int64) string {
+	stringPlayers := make([]string, len(players), len(players))
+
+	for i, id := range players {
+		stringPlayers[i] = strconv.FormatInt(id, 10)
+	}
+
+	parts := []string{ LEAGUE_PREFIX, strings.Join(stringPlayers, ","), "/entry?api_key=", API_KEY }
+	return strings.Join(parts, "")
+}
+
+func SearchPlayerReject(iPlayers interface{}, visited []*IntSet) (expandedPlayers *IntSet) {
+	players := iPlayers.([]int64)
+
+	var leagueData LeagueResponse
+	getJson(createLeagueUrl(players), &leagueData)
+
+	expandedPlayers = NewIntSet()
+
+	for _, playerId := range players {
+		entry, ok := leagueData[strconv.FormatInt(playerId, 10)]
+
+		if ok {
+			for _, leagueDto := range entry {
+				if leagueDto.Queue == DESIRED_QUEUE {
+					if !highEnoughTier(leagueDto.Tier) {
+						expandedPlayers.Add(playerId)
 					}
 				}
 			}
 		} else {
-			rejectedPlayers.Add(playerId)
+			expandedPlayers.Add(playerId)
 		}
 	}
 
-	return expandedPlayers, rejectedPlayers
+	return expandedPlayers
 }

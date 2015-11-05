@@ -81,3 +81,6 @@ type LeagueDto struct {
 	Queue               string
 	Tier                string
 }
+
+type LeagueEntryResponse map[string][]LeagueDto
+// Uses same LeagueDto as LeagueResponse

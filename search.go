@@ -78,16 +78,16 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 
 			outputMatch := <-matchOut
 
-			fmt.Printf("\nGot match output (%d), sending into reject\n", outputMatch)
+			fmt.Printf("\nGot match output (%d), sending into reject\n", outputMatch.Size())
 
 			// Reject all low-tier people gotten from matches
 			rejectIn <- outputMatch
 			outputReject := <-rejectOut
 			outputMatch.Subtract(outputReject)
-			fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject, outputMatch)
+			fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject.Size(), outputMatch.Size())
 
 			outputLeague := <-leagueOut
-			fmt.Printf("\nGot league output (%d)\n", outputLeague)
+			fmt.Printf("\nGot league output (%d)\n", outputLeague.Size())
 
 			// fmt.Printf("\nGot all league responses (%d), rejecting %d, reduced input to %d\n",
 			// 	outputLeague.Size(), rejectLeague.Size(), input.Size())
@@ -98,7 +98,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 			// fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())
 
 			outputMatch.Union(outputLeague)
-			fmt.Printf("\nGot total unioned output (%d)\n", outputMatch)
+			fmt.Printf("\nGot total unioned output (%d)\n", outputMatch.Size())
 
 			outChan <- outputMatch
 		}

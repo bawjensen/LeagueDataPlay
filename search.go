@@ -68,11 +68,6 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 
 		for input := range inChan {
 
-			/*
-			TODO: Get leagues and matches at the same time, then weed out all low-tier players with league/{id}/entry
-			*/
-
-			// Do league first, so league can weed out players of too-low tier?
 			leagueIn <- input
 			matchIn <- input
 
@@ -88,14 +83,6 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 
 			outputLeague := <-leagueOut
 			fmt.Printf("\nGot league output (%d)\n", outputLeague.Size())
-
-			// fmt.Printf("\nGot all league responses (%d), rejecting %d, reduced input to %d\n",
-			// 	outputLeague.Size(), rejectLeague.Size(), input.Size())
-
-
-
-			// fmt.Printf("\n Leagues: got %d new players\n", outputLeague.Size())
-			// fmt.Printf("\n Matches: got %d new players\n", outputMatch.Size())
 
 			outputMatch.Union(outputLeague)
 			fmt.Printf("\nGot total unioned output (%d)\n", outputMatch.Size())

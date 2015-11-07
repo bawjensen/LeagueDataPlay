@@ -78,8 +78,7 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 				outputReject := <-rejectOut
 				outputMatch.Subtract(outputReject)
 				fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject.Size(), outputMatch.Size())
-			}
-			else {
+			} else {
 				fmt.Printf("\nGot match output (%d)\n", outputMatch.Size())
 			}
 

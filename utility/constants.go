@@ -25,8 +25,8 @@ const (
 	// Determined by API
 	REQUEST_CAP = 3000 // requests
 	REQUEST_PERIOD = 10 * time.Second // seconds
+	PLAYERS_PER_LEAGUE_CALL = 10 // Comma separated entries in the /league/ call
 
-	PLAYERS_PER_LEAGUE_CALL = 10
 	ONE_HOUR = 			 60 * 60
 	ONE_DAY = 		24 * 60 * 60
 	ONE_WEEK =  7 * 24 * 60 * 60

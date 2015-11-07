@@ -72,11 +72,8 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 			matchIn <- input
 
 			outputMatch := <-matchOut
-
 			fmt.Printf("\nGot match output (%d), sending into reject\n", outputMatch.Size())
-
-			// Reject all low-tier people gotten from matches
-			rejectIn <- outputMatch
+			rejectIn <- outputMatch // Reject all low-tier people gotten from matches
 			outputReject := <-rejectOut
 			outputMatch.Subtract(outputReject)
 			fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject.Size(), outputMatch.Size())

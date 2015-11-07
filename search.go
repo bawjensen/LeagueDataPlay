@@ -72,11 +72,16 @@ func createSearchIterator() (inChan, outChan chan *IntSet, visited []*IntSet) {
 			matchIn <- input
 
 			outputMatch := <-matchOut
-			fmt.Printf("\nGot match output (%d), sending into reject\n", outputMatch.Size())
-			rejectIn <- outputMatch // Reject all low-tier people gotten from matches
-			outputReject := <-rejectOut
-			outputMatch.Subtract(outputReject)
-			fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject.Size(), outputMatch.Size())
+			if FILTERING_BY_LEAGUE {
+				fmt.Printf("\nGot match output (%d), sending into reject\n", outputMatch.Size())
+				rejectIn <- outputMatch // Reject all low-tier people gotten from matches
+				outputReject := <-rejectOut
+				outputMatch.Subtract(outputReject)
+				fmt.Printf("\nGot reject output (%d), removing from match output (%d)\n", outputReject.Size(), outputMatch.Size())
+			}
+			else {
+				fmt.Printf("\nGot match output (%d)\n", outputMatch.Size())
+			}
 
 			outputLeague := <-leagueOut
 			fmt.Printf("\nGot league output (%d)\n", outputLeague.Size())

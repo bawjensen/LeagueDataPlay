@@ -16,6 +16,7 @@ const (
 	// RATE_THROTTLE_BUFFER = 1500 * time.Millisecond // seconds
 	RATE_THROTTLE_BUFFER = 1 * time.Second // seconds
 	MAX_SIMUL_REQUESTS = 500
+	FILTERING_BY_LEAGUE = true
 
 	// ----------------------------------- Based on search system ----------------------------------
 
